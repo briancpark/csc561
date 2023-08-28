@@ -133,11 +133,10 @@ function drawRandPixels(context) {
     context.putImageData(imagedata, 0, 0);
 } // end draw random pixels
 
-// get the input ellipsoids from the standard class URL
-function getInputEllipsoids() {
+function getInput(url) {
     // load the ellipsoids file
     var httpReq = new XMLHttpRequest(); // a new http request
-    httpReq.open("GET", INPUT_ELLIPSOIDS_URL, false); // init the request
+    httpReq.open("GET", url, false); // init the request
     httpReq.send(null); // send the request
     var startTime = Date.now();
     while ((httpReq.status !== 200) && (httpReq.readyState !== XMLHttpRequest.DONE)) {
@@ -149,68 +148,14 @@ function getInputEllipsoids() {
         return String.null;
     } else
         return JSON.parse(httpReq.response);
-} // end get input ellipsoids
-
-//get the input triangles from the standard class URL
-function getInputTriangles() {
-    // load the triangles file
-    var httpReq = new XMLHttpRequest(); // a new http request
-    httpReq.open("GET", INPUT_TRIANGLES_URL, false); // init the request
-    httpReq.send(null); // send the request
-    var startTime = Date.now();
-    while ((httpReq.status !== 200) && (httpReq.readyState !== XMLHttpRequest.DONE)) {
-        if ((Date.now() - startTime) > 3000)
-            break;
-    } // until its loaded or we time out after three seconds
-    if ((httpReq.status !== 200) || (httpReq.readyState !== XMLHttpRequest.DONE)) {
-        console.log * ("Unable to open input triangles file!");
-        return String.null;
-    } else
-        return JSON.parse(httpReq.response);
-} // end get input triangles
-
-// Get the input boxes from the standard class URL
-function getInputBoxes() {
-    // load the boxes file
-    var httpReq = new XMLHttpRequest(); // a new http request
-    httpReq.open("GET", INPUT_BOXES_URL, false); // init the request
-    httpReq.send(null); // send the request
-    var startTime = Date.now();
-    while ((httpReq.status !== 200) && (httpReq.readyState !== XMLHttpRequest.DONE)) {
-        if ((Date.now() - startTime) > 3000)
-            break;
-    } // until its loaded or we time out after three seconds
-    if ((httpReq.status !== 200) || (httpReq.readyState !== XMLHttpRequest.DONE)) {
-        console.log * ("Unable to open input boxes file!");
-        return String.null;
-    } else
-        return JSON.parse(httpReq.response);
-} // end get input boxes
-
-// Get the input lights from the standard class URL
-function getInputLights() {
-    var httpReq = new XMLHttpRequest(); // a new http request
-    httpReq.open("GET", INPUT_LIGHTS_URL, false); // init the request
-    httpReq.send(null); // send the request
-    var startTime = Date.now();
-    while ((httpReq.status !== 200) && (httpReq.readyState !== XMLHttpRequest.DONE)) {
-        if ((Date.now() - startTime) > 3000)
-            break;
-    } // until its loaded or we time out after three seconds
-    if ((httpReq.status !== 200) || (httpReq.readyState !== XMLHttpRequest.DONE)) {
-        console.log * ("Unable to open input lights file!");
-        return String.null;
-    } else
-        return JSON.parse(httpReq.response);
-} // end get input lights
+}
 
 // put random points in the ellipsoids from the class github
 function drawRandPixelsInInputEllipsoids(context) {
-    var inputEllipsoids = getInputEllipsoids();
+    var inputEllipsoids = getInput(INPUT_ELLIPSOIDS_URL);
     var w = context.canvas.width;
     var h = context.canvas.height;
     var imagedata = context.createImageData(w, h);
-    const PIXEL_DENSITY = 100;
     var numCanvasPixels = (w * h) * PIXEL_DENSITY;
 
     if (inputEllipsoids != String.null) {
@@ -260,8 +205,8 @@ function drawRandPixelsInInputEllipsoids(context) {
 } // end draw rand pixels in input ellipsoids
 
 function drawRayCastEllipsoid(context) {
-    var inputEllipsoids = getInputEllipsoids();
-    var inputLights = getInputLights();
+    var inputEllipsoids = getInput(INPUT_ELLIPSOIDS_URL);
+    var inputLights = getInput(INPUT_LIGHTS_URL);
     var w = context.canvas.width;
     var h = context.canvas.height;
     var imagedata = context.createImageData(w, h);
@@ -316,7 +261,7 @@ function drawRayCastEllipsoid(context) {
 
 // draw 2d projections read from the JSON file at class github
 function drawInputEllipsoidsUsingArcs(context) {
-    var inputEllipsoids = getInputEllipsoids();
+    var inputEllipsoids = getInput(INPUT_ELLIPSOIDS_URL);
 
     if (inputEllipsoids != String.null) {
         var c = new Color(0, 0, 0, 0); // the color at the pixel: black
@@ -352,11 +297,10 @@ function drawInputEllipsoidsUsingArcs(context) {
 
 //put random points in the triangles from the class github
 function drawRandPixelsInInputTriangles(context) {
-    var inputTriangles = getInputTriangles();
+    var inputTriangles = getInput(INPUT_TRIANGLES_URL);
     var w = context.canvas.width;
     var h = context.canvas.height;
     var imagedata = context.createImageData(w, h);
-    const PIXEL_DENSITY = 0.1;
     var numCanvasPixels = (w * h) * PIXEL_DENSITY;
 
     if (inputTriangles != String.null) {
@@ -433,7 +377,7 @@ function drawRandPixelsInInputTriangles(context) {
 
 //draw 2d projections traingle from the JSON file at class github
 function drawInputTrainglesUsingPaths(context) {
-    var inputTriangles = getInputTriangles();
+    var inputTriangles = getInput(INPUT_TRIANGLES_URL);
 
     if (inputTriangles != String.null) {
         var c = new Color(0, 0, 0, 0); // the color at the pixel: black
@@ -479,11 +423,10 @@ function drawInputTrainglesUsingPaths(context) {
 
 // put random points in the boxes from the class github
 function drawRandPixelsInInputBoxes(context) {
-    var inputBoxes = getInputBoxes();
+    var inputBoxes = getInput(INPUT_BOXES_URL);
     var w = context.canvas.width;
     var h = context.canvas.height;
     var imagedata = context.createImageData(w, h);
-    const PIXEL_DENSITY = 0.1;
     var numCanvasPixels = (w * h) * PIXEL_DENSITY;
 
     if (inputBoxes != String.null) {
@@ -536,7 +479,7 @@ function drawRandPixelsInInputBoxes(context) {
 
 //draw 2d projections boxes from the JSON file at class github
 function drawInputBoxesUsingPaths(context) {
-    var inputBoxes = getInputBoxes();
+    var inputBoxes = getInput(INPUT_BOXES_URL);
     var n = inputBoxes.length; // the number of input boxes
 
     if (inputBoxes != String.null) {
