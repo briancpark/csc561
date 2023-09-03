@@ -166,10 +166,10 @@ function findRay(e, p, t) {
 
 
 function drawRayCastEllipsoid(context, eye) {
-    const UL = new Vector(0, 1, 0);
-    const UR = new Vector(1, 1, 0);
-    const LL = new Vector(0, 0, 0);
-    const LR = new Vector(1, 0, 0);
+    const UL = new Vector(0, 1, 0.0);
+    const UR = new Vector(1, 1, 0.0);
+    const LL = new Vector(0, 0, 0.0);
+    const LR = new Vector(1, 0, 0.0);
 
     var inputEllipsoids = getInput(INPUT_ELLIPSOIDS_URL);
     var inputLights = getInput(INPUT_LIGHTS_URL);
@@ -184,7 +184,7 @@ function drawRayCastEllipsoid(context, eye) {
         var ellipsoidXRadius = 0; // init ellipsoid x radius
         var ellipsoidYRadius = 0; // init ellipsoid y radius
         var numEllipsoidPixels = 0; // init num pixels in ellipsoid
-        var color = new Color(0, 0, 0, 255); // black color
+
         var n = inputEllipsoids.length; // the number of input ellipsoids
         var rayDirection = new Vector(0, 0, 0);
 
@@ -201,16 +201,13 @@ function drawRayCastEllipsoid(context, eye) {
         // Loop over each screen pixel in a 2d for loop row-major order
         for (var i = 0; i < h; i++) {
             for (var j = 0; j < w; j++) {
+                var color = new Color(0, 0, 0, 255); // black color
                 var s = i / h;
                 var t = j / w;
-                var p = new Vector(s, t, 0);
-
-                // draw black pixel
-                // drawPixel(imagedata, i, j, c);
+                var p = new Vector(s, t, 0.0);
 
                 // Find the ray from the eye through the pixel
                 var ray = findRay(eye, p, t);
-                // console.log(i, j, ray);
 
                 // for each object in the scene
                 for (var e = 0; e < n; e++) {
@@ -238,7 +235,7 @@ function drawRayCastEllipsoid(context, eye) {
 
                     var discriminant = (b * b) - (4 * a * c);
                     if (discriminant < 0) {
-
+                        drawPixel(imagedata, i, j, color);
                     } else {
                         var t1 = (-b + Math.sqrt(discriminant)) / (2 * a);
                         var t2 = (-b - Math.sqrt(discriminant)) / (2 * a);
