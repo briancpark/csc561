@@ -185,6 +185,7 @@ function drawRayCastEllipsoid(context, eye) {
         for (let j = 0; j < h; j++) {
             s = 0;
             for (let i = 0; i < w; i++) {
+                var closest = Number.MAX_VALUE;
                 var color = new Color(0, 0, 0, 255); // black color
                 // Find the ray from the eye through the pixel
                 var p = new Vector(s, t, 0.0);
@@ -207,26 +208,29 @@ function drawRayCastEllipsoid(context, eye) {
                     var d_div_a = Vector.div(d, A);
                     var c_sub_c = Vector.sub(eye, C);
                     var c_sub_c_div_a = Vector.div(c_sub_c, A);
+
                     var a = Vector.dot(d_div_a, d_div_a);
-
                     var b = 2 * Vector.dot(d_div_a, Vector.div(c_sub_c, A));
-
                     var c = Vector.dot(c_sub_c_div_a, c_sub_c_div_a) - 1;
 
                     var discriminant = (b * b) - (4 * a * c);
-                    if (discriminant < 0) {
-                        drawPixel(imagedata, i, j, color);
-                    } else {
-                        var t1 = (-b + Math.sqrt(discriminant)) / (2 * a);
-                        var t2 = (-b - Math.sqrt(discriminant)) / (2 * a);
-                        var t0 = Math.min(t1, t2);
-                        color.change(
-                            inputEllipsoids[e].diffuse[0] * 255,
-                            inputEllipsoids[e].diffuse[1] * 255,
-                            inputEllipsoids[e].diffuse[2] * 255,
-                            255);
-                        drawPixel(imagedata, i, j, color);
+
+                    if (discriminant >= 0) {
+                        var t0 = (-b + Math.sqrt(discriminant)) / (2 * a);
+                        var t1 = (-b - Math.sqrt(discriminant)) / (2 * a);
+                        var smallest_t = Math.min(t0, t1);
+
+                        // if the ray intersects the object, and is closest yet
+                        if (smallest_t < closest) {
+                            closest = smallest_t;
+                            color.change(
+                                inputEllipsoids[e].diffuse[0] * 255,
+                                inputEllipsoids[e].diffuse[1] * 255,
+                                inputEllipsoids[e].diffuse[2] * 255,
+                                255);
+                        }
                     }
+                    drawPixel(imagedata, i, j, color);
                 }
                 s += 1 / w;
             }
