@@ -158,35 +158,15 @@ function getInput(url) {
         return JSON.parse(httpReq.response);
 }
 
-function findRay(e, p, t) {
-    // E + t(P-E)
-    var ray = Vector.add(e, Vector.scaled(Vector.sub(p, e), t));
-    return ray;
-}
-
-
 function drawRayCastEllipsoid(context, eye) {
-    const UL = new Vector(0, 1, 0.0);
-    const UR = new Vector(1, 1, 0.0);
-    const LL = new Vector(0, 0, 0.0);
-    const LR = new Vector(1, 0, 0.0);
-
     var inputEllipsoids = getInput(INPUT_ELLIPSOIDS_URL);
     var inputLights = getInput(INPUT_LIGHTS_URL);
     var w = context.canvas.width;
     var h = context.canvas.height;
     var imagedata = context.createImageData(w, h);
-    var numCanvasPixels = (w * h) * PIXEL_DENSITY;
 
     if (inputEllipsoids != String.null) {
-        var x = 0;
-        var y = 0; // pixel coord init
-        var ellipsoidXRadius = 0; // init ellipsoid x radius
-        var ellipsoidYRadius = 0; // init ellipsoid y radius
-        var numEllipsoidPixels = 0; // init num pixels in ellipsoid
-
         var n = inputEllipsoids.length; // the number of input ellipsoids
-        var rayDirection = new Vector(0, 0, 0);
 
         // Here is the pseduocode
         /*
@@ -198,19 +178,19 @@ function drawRayCastEllipsoid(context, eye) {
             Find color for closest intersection
          */
 
-        // Loop over each screen pixel in a 2d for loop row-major order
-        for (var i = 0; i < h; i++) {
-            for (var j = 0; j < w; j++) {
+        let s = 0;
+        let t = 1;
+
+        // Loop over each screen pixel in a 2d for loop col-major order
+        for (let j = 0; j < h; j++) {
+            s = 0;
+            for (let i = 0; i < w; i++) {
                 var color = new Color(0, 0, 0, 255); // black color
-                var s = i / h;
-                var t = j / w;
+                // Find the ray from the eye through the pixel
                 var p = new Vector(s, t, 0.0);
 
-                // Find the ray from the eye through the pixel
-                var ray = findRay(eye, p, t);
-
                 // for each object in the scene
-                for (var e = 0; e < n; e++) {
+                for (let e = 0; e < n; e++) {
                     // get the discriminants of the ellipsoid and ray
                     // Solve this equation:
 
@@ -239,7 +219,7 @@ function drawRayCastEllipsoid(context, eye) {
                     } else {
                         var t1 = (-b + Math.sqrt(discriminant)) / (2 * a);
                         var t2 = (-b - Math.sqrt(discriminant)) / (2 * a);
-                        var t = Math.min(t1, t2);
+                        var t0 = Math.min(t1, t2);
                         color.change(
                             inputEllipsoids[e].diffuse[0] * 255,
                             inputEllipsoids[e].diffuse[1] * 255,
@@ -248,8 +228,11 @@ function drawRayCastEllipsoid(context, eye) {
                         drawPixel(imagedata, i, j, color);
                     }
                 }
+                s += 1 / w;
             }
+            t -= 1 / h;
         }
+
     }
     context.putImageData(imagedata, 0, 0);
 } // end draw rand pixels in input ellipsoids
