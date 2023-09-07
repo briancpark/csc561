@@ -61,47 +61,19 @@ class Vector {
     }
 
     static add(v1, v2) {
-        if (v1 instanceof Vector && v2 instanceof Vector) {
-            return new Vector(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z);
-        } else if (v1 instanceof Vector && typeof (v2) === "number") {
-            // broadcast scalar to vector
-            return new Vector(v1.x + v2, v1.y + v2, v1.z + v2);
-        } else if (typeof (v1) === "number" && v2 instanceof Vector) {
-            return new Vector(v1 + v2.x, v1 + v2.y, v1 + v2.z);
-        }
+        return new Vector(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z);
     }
 
     static sub(v1, v2) {
-        if (v1 instanceof Vector && v2 instanceof Vector) {
-            return new Vector(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z);
-        } else if (v1 instanceof Vector && typeof (v2) === "number") {
-            // broadcast scalar to vector
-            return new Vector(v1.x - v2, v1.y - v2, v1.z - v2);
-        } else if (typeof (v1) === "number" && v2 instanceof Vector) {
-            return new Vector(v1 - v2.x, v1 - v2.y, v1 - v2.z);
-        }
+        return new Vector(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z);
     }
 
     static div(v1, v2) {
-        if (v1 instanceof Vector && v2 instanceof Vector) {
-            return new Vector(v1.x / v2.x, v1.y / v2.y, v1.z / v2.z);
-        } else if (v1 instanceof Vector && typeof (v2) === "number") {
-            // broadcast scalar to vector
-            return new Vector(v1.x / v2, v1.y / v2, v1.z / v2);
-        } else if (typeof (v1) === "number" && v2 instanceof Vector) {
-            return new Vector(v1 / v2.x, v1 / v2.y, v1 / v2.z);
-        }
+        return new Vector(v1.x / v2.x, v1.y / v2.y, v1.z / v2.z);
     }
 
     static mul(v1, v2) {
-        if (v1 instanceof Vector && v2 instanceof Vector) {
-            return new Vector(v1.x * v2.x, v1.y * v2.y, v1.z * v2.z);
-        } else if (v1 instanceof Vector && typeof (v2) === "number") {
-            // broadcast scalar to vector
-            return new Vector(v1.x * v2, v1.y * v2, v1.z * v2);
-        } else if (typeof (v1) === "number" && v2 instanceof Vector) {
-            return new Vector(v1 * v2.x, v1 * v2.y, v1 * v2.z);
-        }
+        return new Vector(v1.x * v2.x, v1.y * v2.y, v1.z * v2.z);
     }
 
     static dot(v1, v2) {
@@ -118,6 +90,10 @@ class Vector {
 
     static square(v1) {
         return new Vector(v1.x * v1.x, v1.y * v1.y, v1.z * v1.z);
+    }
+
+    static min(v1, v2) {
+        return new Vector(Math.min(v1.x, v2.x), Math.min(v1.y, v2.y), Math.min(v1.z, v2.z));
     }
 }
 
@@ -224,22 +200,23 @@ function ellipsoidColor(ellipsoid, intersection, lights, eye) {
         var H = Vector.norm(Vector.add(L, V));
 
         // ambient + diffuse + specular = color
+        // Recall that the dot products could be negative
 
         // Ambient
         color = Vector.add(color, Vector.mul(e_ambient, l_ambient));
 
         // Diffuse
         var diffuse_scale = Math.max(0, Vector.dot(N, L));
-        color = Vector.add(color, Vector.mul(e_diffuse, Vector.scaled(l_diffuse, diffuse_scale)));
+        color = Vector.add(color, Vector.scaled(Vector.mul(e_diffuse, l_diffuse), diffuse_scale));
 
         // Specular
-        var specular_scale = Math.pow(Vector.dot(N, H), ellipsoid.n);
-        color = Vector.add(color, Vector.mul(e_specular, Vector.scaled(l_specular, specular_scale)));
+        var specular_scale = Math.pow(Math.max(0, Vector.dot(N, H)), ellipsoid.n);
+        color = Vector.add(color, Vector.scaled(Vector.mul(e_specular, l_specular), specular_scale));
 
         // Clamp to 1
-        color.x = 255 * Math.min(1, color.x);
-        color.y = 255 * Math.min(1, color.y);
-        color.z = 255 * Math.min(1, color.z);
+        var ones = new Vector(1, 1, 1);
+        var clamp = Vector.scaled(ones, 255);
+        color = Vector.mul(Vector.min(color, ones), clamp);
     }
 
     return new Color(color.x, color.y, color.z, 255);
