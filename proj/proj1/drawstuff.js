@@ -113,7 +113,7 @@ class Vector {
     }
 
     static norm(v1) {
-        return Math.sqrt(v1.x * v1.x + v1.y * v1.y + v1.z * v1.z);
+        return(Vector.scaled(v1, 1/Math.sqrt(Vector.dot(v1,v1))));
     }
 
     static square(v1) {
@@ -196,26 +196,61 @@ function ellipsoidInteserction(p, eye, ellipsoid) {
     }
 }
 
-function ellipsoidColor(ellipsoid, intersection, lights) {
+function ellipsoidColor(ellipsoid, intersection, lights, eye) {
+    // Iterate over each light
+    var color = new Vector(0, 0, 0);
 
-    // var light_location = new Vector(lights.location[0], lights.location[1], lights.location[2]);
-    //
-    // var color = new Color(0, 0, 0, 255);
-    //
-    // color.r += lights.ambient[0] * ellipsoid.ambient[0]; // ambient term r
-    // color.g += lights.ambient[1] * ellipsoid.ambient[1]; // ambient term g
-    // color.b += lights.ambient[2] * ellipsoid.ambient[2]; // ambient term b
+    for (let i = 0; i < lights.length; i++) {
+        var light = lights[i];
+        var light_location = new Vector(light.x, light.y, light.z);
+        var e_ambient = new Vector(ellipsoid.ambient[0], ellipsoid.ambient[1], ellipsoid.ambient[2]);
+        var l_ambient = new Vector(light.ambient[0], light.ambient[1], light.ambient[2]);
+        var e_diffuse = new Vector(ellipsoid.diffuse[0], ellipsoid.diffuse[1], ellipsoid.diffuse[2]);
+        var l_diffuse = new Vector(light.diffuse[0], light.diffuse[1], light.diffuse[2]);
+        var e_specular = new Vector(ellipsoid.specular[0], ellipsoid.specular[1], ellipsoid.specular[2]);
+        var l_specular = new Vector(light.specular[0], light.specular[1], light.specular[2]);
 
 
-    // Get the normal vector at the intersection point
-    // 2(I_x - Cx) / a^2, 2(I_y - Cy) / b^2, 2(I_z - Cz) / c^2
-    var C = new Vector(ellipsoid.x, ellipsoid.y, ellipsoid.z);
-    var A = new Vector(ellipsoid.a, ellipsoid.b, ellipsoid.c);
-    var I = intersection.intersection;
-    var normal = Vector.scaled(Vector.sub(I, Vector.square(C)), 2);
+        // ambient + diffuse + specular = color
 
+        // ambient
+        color = Vector.add(color, Vector.mul(l_ambient, e_ambient));
+        var I = intersection.intersection;
+
+        // L
+        var L = Vector.norm(Vector.sub(light_location, I));
+
+        // Get the normal vector, N, at the intersection point
+        // 2(I_x - Cx) / a^2, 2(I_y - Cy) / b^2, 2(I_z - Cz) / c^2
+        var C = new Vector(ellipsoid.x, ellipsoid.y, ellipsoid.z);
+        var A = new Vector(ellipsoid.a, ellipsoid.b, ellipsoid.c);
+
+        var N = Vector.div(Vector.scaled(Vector.sub(I, C), 2), Vector.square(A));
+
+        var diffuse_factor = Math.max(0, Vector.dot(L, N));
+        if (diffuse_factor > 0) {
+            color = Vector.add(color, Vector.mul(l_diffuse, Vector.scaled(e_diffuse, diffuse_factor)));
+        }
+
+        // Specular
+        var V = Vector.norm(Vector.sub(eye, I));
+        var H = Vector.norm(Vector.add(L, V));
+
+        var specular_factor = Math.max(0, Vector.dot(N, H));
+        if (specular_factor > 0) {
+            var new_specular_factor = Math.pow(specular_factor, ellipsoid.n);
+            color = Vector.add(color, Vector.mul(l_specular, Vector.scaled(e_specular, new_specular_factor)));
+        }
+    }
+
+    // clamp to 1
+    color.x = 255 * Math.min(1, color.x / lights.length);
+    color.y = 255 * Math.min(1, color.y / lights.length);
+    color.z = 255 * Math.min(1, color.z / lights.length);
+
+    var r_color = new Color(color.x, color.y, color.z, 255);
     // return color;
-    return new Color(ellipsoid.diffuse[0] * 255, ellipsoid.diffuse[1] * 255, ellipsoid.diffuse[2] * 255, 255);
+    return r_color
 }
 
 function drawRayCastEllipsoid(context, eye) {
@@ -258,7 +293,7 @@ function drawRayCastEllipsoid(context, eye) {
                         // if the ray intersects the object, and is closest yet
                         if (intersection.t < closest) {
                             closest = intersection.t;
-                            color = ellipsoidColor(inputEllipsoids[e], intersection, inputLights);
+                            color = ellipsoidColor(inputEllipsoids[e], intersection, inputLights, eye);
                         }
                     }
                     drawPixel(imagedata, i, j, color);
