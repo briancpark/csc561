@@ -113,7 +113,7 @@ class Vector {
     }
 
     static norm(v1) {
-        return(Vector.scaled(v1, 1/Math.sqrt(Vector.dot(v1,v1))));
+        return (Vector.scaled(v1, 1 / Math.sqrt(Vector.dot(v1, v1))));
     }
 
     static square(v1) {
@@ -203,6 +203,7 @@ function ellipsoidColor(ellipsoid, intersection, lights, eye) {
     for (let i = 0; i < lights.length; i++) {
         var light = lights[i];
         var light_location = new Vector(light.x, light.y, light.z);
+        // var light_location = new Vector(-0.5, 1.5, -0.5);
         var e_ambient = new Vector(ellipsoid.ambient[0], ellipsoid.ambient[1], ellipsoid.ambient[2]);
         var l_ambient = new Vector(light.ambient[0], light.ambient[1], light.ambient[2]);
         var e_diffuse = new Vector(ellipsoid.diffuse[0], ellipsoid.diffuse[1], ellipsoid.diffuse[2]);
@@ -210,47 +211,38 @@ function ellipsoidColor(ellipsoid, intersection, lights, eye) {
         var e_specular = new Vector(ellipsoid.specular[0], ellipsoid.specular[1], ellipsoid.specular[2]);
         var l_specular = new Vector(light.specular[0], light.specular[1], light.specular[2]);
 
-
-        // ambient + diffuse + specular = color
-
-        // ambient
-        color = Vector.add(color, Vector.mul(l_ambient, e_ambient));
+        // Variables for the Phong model
         var I = intersection.intersection;
-
-        // L
+        var C = new Vector(ellipsoid.x, ellipsoid.y, ellipsoid.z);
+        var A = new Vector(ellipsoid.a, ellipsoid.b, ellipsoid.c);
         var L = Vector.norm(Vector.sub(light_location, I));
 
         // Get the normal vector, N, at the intersection point
         // 2(I_x - Cx) / a^2, 2(I_y - Cy) / b^2, 2(I_z - Cz) / c^2
-        var C = new Vector(ellipsoid.x, ellipsoid.y, ellipsoid.z);
-        var A = new Vector(ellipsoid.a, ellipsoid.b, ellipsoid.c);
-
-        var N = Vector.div(Vector.scaled(Vector.sub(I, C), 2), Vector.square(A));
-
-        var diffuse_factor = Math.max(0, Vector.dot(L, N));
-        if (diffuse_factor > 0) {
-            color = Vector.add(color, Vector.mul(l_diffuse, Vector.scaled(e_diffuse, diffuse_factor)));
-        }
-
-        // Specular
+        var N = Vector.norm(Vector.div(Vector.scaled(Vector.sub(I, C), 2), Vector.square(A)));
         var V = Vector.norm(Vector.sub(eye, I));
         var H = Vector.norm(Vector.add(L, V));
 
-        var specular_factor = Math.max(0, Vector.dot(N, H));
-        if (specular_factor > 0) {
-            var new_specular_factor = Math.pow(specular_factor, ellipsoid.n);
-            color = Vector.add(color, Vector.mul(l_specular, Vector.scaled(e_specular, new_specular_factor)));
-        }
+        // ambient + diffuse + specular = color
+
+        // Ambient
+        color = Vector.add(color, Vector.mul(e_ambient, l_ambient));
+
+        // Diffuse
+        var diffuse_scale = Math.max(0, Vector.dot(N, L));
+        color = Vector.add(color, Vector.mul(e_diffuse, Vector.scaled(l_diffuse, diffuse_scale)));
+
+        // Specular
+        var specular_scale = Math.pow(Vector.dot(N, H), ellipsoid.n);
+        color = Vector.add(color, Vector.mul(e_specular, Vector.scaled(l_specular, specular_scale)));
+
+        // Clamp to 1
+        color.x = 255 * Math.min(1, color.x);
+        color.y = 255 * Math.min(1, color.y);
+        color.z = 255 * Math.min(1, color.z);
     }
 
-    // clamp to 1
-    color.x = 255 * Math.min(1, color.x / lights.length);
-    color.y = 255 * Math.min(1, color.y / lights.length);
-    color.z = 255 * Math.min(1, color.z / lights.length);
-
-    var r_color = new Color(color.x, color.y, color.z, 255);
-    // return color;
-    return r_color
+    return new Color(color.x, color.y, color.z, 255);
 }
 
 function drawRayCastEllipsoid(context, eye) {
