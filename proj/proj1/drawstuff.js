@@ -115,6 +115,10 @@ class Vector {
     static norm(v1) {
         return Math.sqrt(v1.x * v1.x + v1.y * v1.y + v1.z * v1.z);
     }
+
+    static square(v1) {
+        return new Vector(v1.x * v1.x, v1.y * v1.y, v1.z * v1.z);
+    }
 }
 
 /* utility functions */
@@ -158,6 +162,62 @@ function getInput(url) {
         return JSON.parse(httpReq.response);
 }
 
+function ellipsoidInteserction(p, eye, ellipsoid) {
+    // get the discriminants of the ellipsoid and ray
+    // Solve this equation:
+
+    // t = (1/2a) (-b ± (b^2 - 4ac)^0.5)
+    // with
+    // a = D/A•D/A
+    // b = 2 D/A•(E-C)/A
+    // c = (E-C)/A•(E-C)/A - 1
+    var C = new Vector(ellipsoid.x, ellipsoid.y, ellipsoid.z);
+    var A = new Vector(ellipsoid.a, ellipsoid.b, ellipsoid.c);
+
+    var d = Vector.sub(p, eye);
+    var d_div_a = Vector.div(d, A);
+    var c_sub_c = Vector.sub(eye, C);
+    var c_sub_c_div_a = Vector.div(c_sub_c, A);
+
+    var a = Vector.dot(d_div_a, d_div_a);
+    var b = 2 * Vector.dot(d_div_a, Vector.div(c_sub_c, A));
+    var c = Vector.dot(c_sub_c_div_a, c_sub_c_div_a) - 1;
+
+    var discriminant = (b * b) - (4 * a * c);
+
+    if (discriminant >= 0) {
+        var t0 = (-b + Math.sqrt(discriminant)) / (2 * a);
+        var t1 = (-b - Math.sqrt(discriminant)) / (2 * a);
+        var smallest_t = Math.min(t0, t1);
+        var intersection_vector = Vector.add(eye, Vector.scaled(d, smallest_t));
+        return {"discriminant": true, "intersection": intersection_vector, "t": smallest_t}
+    } else {
+        return {"discriminant": false, "intersection": NaN, "t": NaN};
+    }
+}
+
+function ellipsoidColor(ellipsoid, intersection, lights) {
+
+    // var light_location = new Vector(lights.location[0], lights.location[1], lights.location[2]);
+    //
+    // var color = new Color(0, 0, 0, 255);
+    //
+    // color.r += lights.ambient[0] * ellipsoid.ambient[0]; // ambient term r
+    // color.g += lights.ambient[1] * ellipsoid.ambient[1]; // ambient term g
+    // color.b += lights.ambient[2] * ellipsoid.ambient[2]; // ambient term b
+
+
+    // Get the normal vector at the intersection point
+    // 2(I_x - Cx) / a^2, 2(I_y - Cy) / b^2, 2(I_z - Cz) / c^2
+    var C = new Vector(ellipsoid.x, ellipsoid.y, ellipsoid.z);
+    var A = new Vector(ellipsoid.a, ellipsoid.b, ellipsoid.c);
+    var I = intersection.intersection;
+    var normal = Vector.scaled(Vector.sub(I, Vector.square(C)), 2);
+
+    // return color;
+    return new Color(ellipsoid.diffuse[0] * 255, ellipsoid.diffuse[1] * 255, ellipsoid.diffuse[2] * 255, 255);
+}
+
 function drawRayCastEllipsoid(context, eye) {
     var inputEllipsoids = getInput(INPUT_ELLIPSOIDS_URL);
     var inputLights = getInput(INPUT_LIGHTS_URL);
@@ -168,7 +228,7 @@ function drawRayCastEllipsoid(context, eye) {
     if (inputEllipsoids != String.null) {
         var n = inputEllipsoids.length; // the number of input ellipsoids
 
-        // Here is the pseduocode
+        // Here is the pseudocode
         /*
         For each screen pixel
             Find the ray from the eye through the pixel
@@ -192,42 +252,13 @@ function drawRayCastEllipsoid(context, eye) {
 
                 // for each object in the scene
                 for (let e = 0; e < n; e++) {
-                    // get the discriminants of the ellipsoid and ray
-                    // Solve this equation:
+                    var intersection = ellipsoidInteserction(p, eye, inputEllipsoids[e]);
 
-                    // t = (1/2a) (-b ± (b^2 - 4ac)^0.5)
-                    // with
-                    // a = D/A•D/A
-                    // b = 2 D/A•(E-C)/A
-                    // c = (E-C)/A•(E-C)/A - 1
-
-                    var C = new Vector(inputEllipsoids[e].x, inputEllipsoids[e].y, inputEllipsoids[e].z);
-                    var A = new Vector(inputEllipsoids[e].a, inputEllipsoids[e].b, inputEllipsoids[e].c);
-
-                    var d = Vector.sub(p, eye);
-                    var d_div_a = Vector.div(d, A);
-                    var c_sub_c = Vector.sub(eye, C);
-                    var c_sub_c_div_a = Vector.div(c_sub_c, A);
-
-                    var a = Vector.dot(d_div_a, d_div_a);
-                    var b = 2 * Vector.dot(d_div_a, Vector.div(c_sub_c, A));
-                    var c = Vector.dot(c_sub_c_div_a, c_sub_c_div_a) - 1;
-
-                    var discriminant = (b * b) - (4 * a * c);
-
-                    if (discriminant >= 0) {
-                        var t0 = (-b + Math.sqrt(discriminant)) / (2 * a);
-                        var t1 = (-b - Math.sqrt(discriminant)) / (2 * a);
-                        var smallest_t = Math.min(t0, t1);
-
+                    if (intersection.discriminant) {
                         // if the ray intersects the object, and is closest yet
-                        if (smallest_t < closest) {
-                            closest = smallest_t;
-                            color.change(
-                                inputEllipsoids[e].diffuse[0] * 255,
-                                inputEllipsoids[e].diffuse[1] * 255,
-                                inputEllipsoids[e].diffuse[2] * 255,
-                                255);
+                        if (intersection.t < closest) {
+                            closest = intersection.t;
+                            color = ellipsoidColor(inputEllipsoids[e], intersection, inputLights);
                         }
                     }
                     drawPixel(imagedata, i, j, color);
