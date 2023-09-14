@@ -95,6 +95,12 @@ class Vector {
     static min(v1, v2) {
         return new Vector(Math.min(v1.x, v2.x), Math.min(v1.y, v2.y), Math.min(v1.z, v2.z));
     }
+
+    static cross(v1, v2) {
+        return new Vector(v1.y * v2.z - v2.y * v1.z,
+            v1.z * v2.x - v2.z * v1.x,
+            v1.x * v2.y - v2.x * v1.y);
+    }
 }
 
 /* utility functions */
@@ -138,7 +144,7 @@ function getInput(url) {
         return JSON.parse(httpReq.response);
 }
 
-function ellipsoidInteserction(p, eye, ellipsoid) {
+function ellipsoidIntersection(p, eye, ellipsoid) {
     // get the discriminants of the ellipsoid and ray
     // Solve this equation:
 
@@ -166,9 +172,9 @@ function ellipsoidInteserction(p, eye, ellipsoid) {
         var t1 = (-b - Math.sqrt(discriminant)) / (2 * a);
         var smallest_t = Math.min(t0, t1);
         var intersection_vector = Vector.add(eye, Vector.scaled(d, smallest_t));
-        return {"discriminant": true, "intersection": intersection_vector, "t": smallest_t}
+        return {"intersection": intersection_vector, "t": smallest_t}
     } else {
-        return {"discriminant": false, "intersection": NaN, "t": NaN};
+        return {"intersection": NaN, "t": NaN};
     }
 }
 
@@ -178,8 +184,8 @@ function ellipsoidColor(ellipsoid, intersection, lights, eye) {
 
     for (let i = 0; i < lights.length; i++) {
         var light = lights[i];
-        var light_location = new Vector(light.x, light.y, light.z);
-        // var light_location = new Vector(-0.5, 1.5, -0.5);
+        // var light_location = new Vector(light.x, light.y, light.z);
+        var light_location = new Vector(-0.5, 1.5, -0.5);
         var e_ambient = new Vector(ellipsoid.ambient[0], ellipsoid.ambient[1], ellipsoid.ambient[2]);
         var l_ambient = new Vector(light.ambient[0], light.ambient[1], light.ambient[2]);
         var e_diffuse = new Vector(ellipsoid.diffuse[0], ellipsoid.diffuse[1], ellipsoid.diffuse[2]);
@@ -188,7 +194,7 @@ function ellipsoidColor(ellipsoid, intersection, lights, eye) {
         var l_specular = new Vector(light.specular[0], light.specular[1], light.specular[2]);
 
         // Variables for the Phong model
-        var I = intersection.intersection;
+        var I = intersection;
         var C = new Vector(ellipsoid.x, ellipsoid.y, ellipsoid.z);
         var A = new Vector(ellipsoid.a, ellipsoid.b, ellipsoid.c);
         var L = Vector.norm(Vector.sub(light_location, I));
@@ -222,25 +228,119 @@ function ellipsoidColor(ellipsoid, intersection, lights, eye) {
     return new Color(color.x, color.y, color.z, 255);
 }
 
-function drawRayCastEllipsoid(context, eye) {
-    var inputEllipsoids = getInput(INPUT_ELLIPSOIDS_URL);
+function triangleColor(triangle, intersection, lights, eye) {
+    // Iterate over each light
+    var color = new Vector(0, 0, 0);
+
+    for (let i = 0; i < lights.length; i++) {
+        var light = lights[i];
+        // var light_location = new Vector(light.x, light.y, light.z);
+        var light_location = new Vector(-0.5, 1.5, -0.5);
+
+        var e_ambient = new Vector(triangle.material.ambient[0], triangle.material.ambient[1], triangle.material.ambient[2]);
+        var l_ambient = new Vector(light.ambient[0], light.ambient[1], light.ambient[2]);
+        var e_diffuse = new Vector(triangle.material.diffuse[0], triangle.material.diffuse[1], triangle.material.diffuse[2]);
+        var l_diffuse = new Vector(light.diffuse[0], light.diffuse[1], light.diffuse[2]);
+        var e_specular = new Vector(triangle.material.specular[0], triangle.material.specular[1], triangle.material.specular[2]);
+        var l_specular = new Vector(light.specular[0], light.specular[1], light.specular[2]);
+
+        // Variables for the Phong model
+        var I = intersection;
+        var A = new Vector(triangle.vertices[0][0], triangle.vertices[0][1], triangle.vertices[0][2]);
+        var B = new Vector(triangle.vertices[1][0], triangle.vertices[1][1], triangle.vertices[1][2]);
+        var C = new Vector(triangle.vertices[2][0], triangle.vertices[2][1], triangle.vertices[2][2]);
+        var L = Vector.norm(Vector.sub(light_location, I));
+
+        // Get the normal vector, N, at the intersection point
+        // N = BA×CA
+        var BA = Vector.sub(B, A);
+        var CA = Vector.sub(C, A);
+        var N = Vector.cross(BA, CA);
+        N = Vector.norm(N);
+        var V = Vector.norm(Vector.sub(eye, I));
+        var H = Vector.norm(Vector.add(L, V));
+
+        // ambient + diffuse + specular = color
+        // Recall that the dot products could be negative
+
+        // Ambient
+        color = Vector.add(color, Vector.mul(e_ambient, l_ambient));
+
+        // Diffuse
+        var diffuse_scale = Math.max(0, Vector.dot(N, L));
+        color = Vector.add(color, Vector.scaled(Vector.mul(e_diffuse, l_diffuse), diffuse_scale));
+
+        // Specular
+        var specular_scale = Math.pow(Math.max(0, Vector.dot(N, H)), triangle.material.n);
+        color = Vector.add(color, Vector.scaled(Vector.mul(e_specular, l_specular), specular_scale));
+
+        // Clamp to 1
+        var ones = new Vector(1, 1, 1);
+        var clamp = Vector.scaled(ones, 255);
+        color = Vector.mul(Vector.min(color, ones), clamp);
+
+        return new Color(color.x, color.y, color.z, 255);
+    }
+}
+
+function triangleInteserction(p, eye, triangle) {
+    // ray equation is p = eye + t * d
+    var D = Vector.sub(p, eye);
+
+    // N = BA×CA
+    var A = new Vector(triangle.vertices[0][0], triangle.vertices[0][1], triangle.vertices[0][2]);
+    var B = new Vector(triangle.vertices[1][0], triangle.vertices[1][1], triangle.vertices[1][2]);
+    var C = new Vector(triangle.vertices[2][0], triangle.vertices[2][1], triangle.vertices[2][2]);
+
+    // Triangle normal
+    // N = BA×CA
+    var BA = Vector.sub(B, A);
+    var CA = Vector.sub(C, A);
+    var N = Vector.cross(BA, CA);
+
+    //triangle plane constant, d = N•A
+    var d = Vector.dot(N, A);
+
+    // Get the intersection point
+    // t = (d - N•E) / N•D
+    var ND = Vector.dot(N, D);
+
+    if (ND == 0) {
+        return {"intersection": NaN, "t": NaN};
+    } else {
+        var t = (d - Vector.dot(N, eye)) / ND;
+        var intersection = Vector.add(eye, Vector.scaled(D, t));
+
+        // determine if point lies in triangle sides
+        var AB = Vector.sub(B, A);
+        var BC = Vector.sub(C, B);
+        var CA = Vector.sub(A, C);
+
+        var AP = Vector.sub(intersection, A);
+        var BP = Vector.sub(intersection, B);
+        var CP = Vector.sub(intersection, C);
+
+        var AB_AP = Vector.cross(AB, AP);
+        var BC_BP = Vector.cross(BC, BP);
+        var CA_CP = Vector.cross(CA, CP);
+
+        if (Vector.dot(N, AB_AP) < 0 || Vector.dot(N, BC_BP) < 0 || Vector.dot(N, CA_CP) < 0) {
+            return {"intersection": NaN, "t": NaN};
+
+        } else {
+            return {"intersection": intersection, "t": t};
+        }
+    }
+}
+function drawRayCastTriangles(context, eye) {
+    var inputTriangles = getInput(INPUT_TRIANGLES_URL);
     var inputLights = getInput(INPUT_LIGHTS_URL);
     var w = context.canvas.width;
     var h = context.canvas.height;
     var imagedata = context.createImageData(w, h);
 
-    if (inputEllipsoids != String.null) {
-        var n = inputEllipsoids.length; // the number of input ellipsoids
-
-        // Here is the pseudocode
-        /*
-        For each screen pixel
-            Find the ray from the eye through the pixel
-            for ech object in the scene
-                if the ray intersects the object, and is closest yet
-                    record intersection and object
-            Find color for closest intersection
-         */
+    if (inputTriangles != String.null) {
+        var n = inputTriangles.length; // the number of input triangles
 
         let s = 0;
         let t = 1;
@@ -256,13 +356,56 @@ function drawRayCastEllipsoid(context, eye) {
 
                 // for each object in the scene
                 for (let e = 0; e < n; e++) {
-                    var intersection = ellipsoidInteserction(p, eye, inputEllipsoids[e]);
+                    var intersection = triangleInteserction(p, eye, inputTriangles[e]);
 
-                    if (intersection.discriminant) {
+                    if (intersection.intersection) {
                         // if the ray intersects the object, and is closest yet
                         if (intersection.t < closest) {
                             closest = intersection.t;
-                            color = ellipsoidColor(inputEllipsoids[e], intersection, inputLights, eye);
+                            color = triangleColor(inputTriangles[e], intersection.intersection, inputLights, eye);
+                        }
+                    }
+                    drawPixel(imagedata, i, j, color);
+                }
+                s += 1 / w;
+            }
+            t -= 1 / h;
+        }
+    }
+    context.putImageData(imagedata, 0, 0);
+}
+
+function drawRayCastEllipsoid(context, eye) {
+    var inputEllipsoids = getInput(INPUT_ELLIPSOIDS_URL);
+    var inputLights = getInput(INPUT_LIGHTS_URL);
+    var w = context.canvas.width;
+    var h = context.canvas.height;
+    var imagedata = context.createImageData(w, h);
+
+    if (inputEllipsoids != String.null) {
+        var n = inputEllipsoids.length; // the number of input ellipsoids
+
+        let s = 0;
+        let t = 1;
+
+        // Loop over each screen pixel in a 2d for loop col-major order
+        for (let j = 0; j < h; j++) {
+            s = 0;
+            for (let i = 0; i < w; i++) {
+                var closest = Number.MAX_VALUE;
+                var color = new Color(0, 0, 0, 255); // black color
+                // Find the ray from the eye through the pixel
+                var p = new Vector(s, t, 0.0);
+
+                // for each object in the scene
+                for (let e = 0; e < n; e++) {
+                    var intersection = ellipsoidIntersection(p, eye, inputEllipsoids[e]);
+
+                    if (intersection.intersection.x != NaN) {
+                        // if the ray intersects the object, and is closest yet
+                        if (intersection.t < closest) {
+                            closest = intersection.t;
+                            color = ellipsoidColor(inputEllipsoids[e], intersection.intersection, inputLights, eye);
                         }
                     }
                     drawPixel(imagedata, i, j, color);
@@ -283,4 +426,15 @@ function main() {
 
     var eye = new Vector(0.5, 0.5, -0.5);
     drawRayCastEllipsoid(context, eye);
+
+    // after pressing spacebar the cursor will change
+    document.addEventListener('keydown', function (event) {
+        if (event.keyCode === 32) {
+            // clear the canvas
+            context.clearRect(0, 0, canvas.width, canvas.height);
+
+            // set and scale the current location of mouse
+            drawRayCastTriangles(context, eye);
+        }
+    }   , false);
 }
