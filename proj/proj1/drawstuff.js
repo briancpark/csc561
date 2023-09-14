@@ -178,6 +178,28 @@ function ellipsoidIntersection(p, eye, ellipsoid) {
     }
 }
 
+function blinnPhongColor(N, L, H, e_ambient, l_ambient, e_diffuse, l_diffuse, e_specular, l_specular, n, color) {
+    // ambient + diffuse + specular = color
+    // Recall that the dot products could be negative
+
+    // Ambient
+    color = Vector.add(color, Vector.mul(e_ambient, l_ambient));
+
+    // Diffuse
+    var diffuse_scale = Math.max(0, Vector.dot(N, L));
+    color = Vector.add(color, Vector.scaled(Vector.mul(e_diffuse, l_diffuse), diffuse_scale));
+
+    // Specular
+    var specular_scale = Math.pow(Math.max(0, Vector.dot(N, H)), n);
+    color = Vector.add(color, Vector.scaled(Vector.mul(e_specular, l_specular), specular_scale));
+
+    // Clamp to 1
+    var ones = new Vector(1, 1, 1);
+    var clamp = Vector.scaled(ones, 255);
+    color = Vector.mul(Vector.min(color, ones), clamp);
+    return color
+}
+
 function ellipsoidColor(ellipsoid, intersection, lights, eye) {
     // Iterate over each light
     var color = new Vector(0, 0, 0);
@@ -205,24 +227,8 @@ function ellipsoidColor(ellipsoid, intersection, lights, eye) {
         var V = Vector.norm(Vector.sub(eye, I));
         var H = Vector.norm(Vector.add(L, V));
 
-        // ambient + diffuse + specular = color
-        // Recall that the dot products could be negative
 
-        // Ambient
-        color = Vector.add(color, Vector.mul(e_ambient, l_ambient));
-
-        // Diffuse
-        var diffuse_scale = Math.max(0, Vector.dot(N, L));
-        color = Vector.add(color, Vector.scaled(Vector.mul(e_diffuse, l_diffuse), diffuse_scale));
-
-        // Specular
-        var specular_scale = Math.pow(Math.max(0, Vector.dot(N, H)), ellipsoid.n);
-        color = Vector.add(color, Vector.scaled(Vector.mul(e_specular, l_specular), specular_scale));
-
-        // Clamp to 1
-        var ones = new Vector(1, 1, 1);
-        var clamp = Vector.scaled(ones, 255);
-        color = Vector.mul(Vector.min(color, ones), clamp);
+        color = blinnPhongColor(N, L, H, e_ambient, l_ambient, e_diffuse, l_diffuse, e_specular, l_specular, ellipsoid.n, color);
     }
 
     return new Color(color.x, color.y, color.z, 255);
@@ -260,27 +266,9 @@ function triangleColor(triangle, intersection, lights, eye) {
         var V = Vector.norm(Vector.sub(eye, I));
         var H = Vector.norm(Vector.add(L, V));
 
-        // ambient + diffuse + specular = color
-        // Recall that the dot products could be negative
-
-        // Ambient
-        color = Vector.add(color, Vector.mul(e_ambient, l_ambient));
-
-        // Diffuse
-        var diffuse_scale = Math.max(0, Vector.dot(N, L));
-        color = Vector.add(color, Vector.scaled(Vector.mul(e_diffuse, l_diffuse), diffuse_scale));
-
-        // Specular
-        var specular_scale = Math.pow(Math.max(0, Vector.dot(N, H)), triangle.material.n);
-        color = Vector.add(color, Vector.scaled(Vector.mul(e_specular, l_specular), specular_scale));
-
-        // Clamp to 1
-        var ones = new Vector(1, 1, 1);
-        var clamp = Vector.scaled(ones, 255);
-        color = Vector.mul(Vector.min(color, ones), clamp);
-
-        return new Color(color.x, color.y, color.z, 255);
+        color = blinnPhongColor(N, L, H, e_ambient, l_ambient, e_diffuse, l_diffuse, e_specular, l_specular, triangle.material.n, color);
     }
+    return new Color(color.x, color.y, color.z, 255);
 }
 
 function triangleInteserction(p, eye, triangle) {
@@ -425,7 +413,12 @@ function main() {
     var context = canvas.getContext("2d");
 
     var eye = new Vector(0.5, 0.5, -0.5);
+
+    // time the ellipsoid drawing
+    var startTime = Date.now();
     drawRayCastEllipsoid(context, eye);
+    var ellipsoidTime = Date.now() - startTime;
+    console.log("Ellipsoid drawing time = " + ellipsoidTime + "ms");
 
     // after pressing spacebar the cursor will change
     document.addEventListener('keydown', function (event) {
