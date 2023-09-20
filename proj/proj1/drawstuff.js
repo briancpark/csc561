@@ -1,9 +1,9 @@
 /* Constants */
 const PIXEL_DENSITY = 0.01;
-const INPUT_ELLIPSOIDS_URL = "https://ncsucgclass.github.io/prog1/ellipsoids.json";
-const INPUT_LIGHTS_URL = "https://ncsucgclass.github.io/prog1/lights.json";
-const INPUT_BOXES_URL = "https://ncsucgclass.github.io/prog1/boxes.json";
-const INPUT_TRIANGLES_URL = "https://ncsucgclass.github.io/prog1/triangles.json";
+const INPUT_ELLIPSOIDS_URL = "attributes/ellipsoids.json";
+const INPUT_LIGHTS_URL = "attributes/lights.json";
+const INPUT_BOXES_URL = "attributes/boxes.json";
+const INPUT_TRIANGLES_URL = "attributes/triangles.json";
 
 /* classes */
 
@@ -178,21 +178,35 @@ function ellipsoidIntersection(p, eye, ellipsoid) {
     }
 }
 
-function blinnPhongColor(N, L, H, e_ambient, l_ambient, e_diffuse, l_diffuse, e_specular, l_specular, n, color) {
+const NUMBOUNCES = 4;
+
+function shading(surface, whichBounce) {
+
+    if (whichBounce < NUMBOUNCES) {
+        color = Vector.add()
+    }
+    return color;
+}
+
+function blinnPhongColor(N, L, H, e_ambient, l_ambient, e_diffuse, l_diffuse, e_specular, l_specular, n, color, shading) {
     // ambient + diffuse + specular = color
     // Recall that the dot products could be negative
 
     // Ambient
-    color = Vector.add(color, Vector.mul(e_ambient, l_ambient));
+    var ambient = Vector.mul(e_ambient, l_ambient);
 
     // Diffuse
     var diffuse_scale = Math.max(0, Vector.dot(N, L));
-    color = Vector.add(color, Vector.scaled(Vector.mul(e_diffuse, l_diffuse), diffuse_scale));
+    var diffuse = Vector.scaled(Vector.mul(e_diffuse, l_diffuse), diffuse_scale);
 
     // Specular
     var specular_scale = Math.pow(Math.max(0, Vector.dot(N, H)), n);
-    color = Vector.add(color, Vector.scaled(Vector.mul(e_specular, l_specular), specular_scale));
+    var specular = Vector.scaled(Vector.mul(e_specular, l_specular), specular_scale);
 
+    var shade_scale = 1;
+
+
+    color = Vector.add(color, Vector.add(ambient, Vector.scaled(Vector.add(diffuse, specular), shade_scale)));
     // Clamp to 1
     var ones = new Vector(1, 1, 1);
     var clamp = Vector.scaled(ones, 255);
@@ -201,6 +215,7 @@ function blinnPhongColor(N, L, H, e_ambient, l_ambient, e_diffuse, l_diffuse, e_
 }
 
 function ellipsoidColor(ellipsoid, intersection, lights, eye) {
+    var shading = true;
     // Iterate over each light
     var color = new Vector(0, 0, 0);
 
@@ -228,7 +243,7 @@ function ellipsoidColor(ellipsoid, intersection, lights, eye) {
         var H = Vector.norm(Vector.add(L, V));
 
 
-        color = blinnPhongColor(N, L, H, e_ambient, l_ambient, e_diffuse, l_diffuse, e_specular, l_specular, ellipsoid.n, color);
+        color = blinnPhongColor(N, L, H, e_ambient, l_ambient, e_diffuse, l_diffuse, e_specular, l_specular, ellipsoid.n, color, shading);
     }
 
     return new Color(color.x, color.y, color.z, 255);
@@ -314,12 +329,12 @@ function triangleInteserction(p, eye, triangle) {
 
         if (Vector.dot(N, AB_AP) < 0 || Vector.dot(N, BC_BP) < 0 || Vector.dot(N, CA_CP) < 0) {
             return {"intersection": NaN, "t": NaN};
-
         } else {
             return {"intersection": intersection, "t": t};
         }
     }
 }
+
 function drawRayCastTriangles(context, eye) {
     var inputTriangles = getInput(INPUT_TRIANGLES_URL);
     var inputLights = getInput(INPUT_LIGHTS_URL);
@@ -341,6 +356,8 @@ function drawRayCastTriangles(context, eye) {
                 var color = new Color(0, 0, 0, 255); // black color
                 // Find the ray from the eye through the pixel
                 var p = new Vector(s, t, 0.0);
+                var triangle;
+                var intersection_vector = null;
 
                 // for each object in the scene
                 for (let e = 0; e < n; e++) {
@@ -350,11 +367,15 @@ function drawRayCastTriangles(context, eye) {
                         // if the ray intersects the object, and is closest yet
                         if (intersection.t < closest) {
                             closest = intersection.t;
-                            color = triangleColor(inputTriangles[e], intersection.intersection, inputLights, eye);
+                            intersection_vector = intersection.intersection
+                            triangle = inputTriangles[e];
                         }
                     }
-                    drawPixel(imagedata, i, j, color);
                 }
+                if (intersection_vector) {
+                    color = triangleColor(triangle, intersection_vector, inputLights, eye);
+                }
+                drawPixel(imagedata, i, j, color);
                 s += 1 / w;
             }
             t -= 1 / h;
@@ -379,7 +400,10 @@ function drawRayCastEllipsoid(context, eye) {
         // Loop over each screen pixel in a 2d for loop col-major order
         for (let j = 0; j < h; j++) {
             s = 0;
+
             for (let i = 0; i < w; i++) {
+                var ellipsoid;
+                var intersection_vector = null;
                 var closest = Number.MAX_VALUE;
                 var color = new Color(0, 0, 0, 255); // black color
                 // Find the ray from the eye through the pixel
@@ -393,11 +417,15 @@ function drawRayCastEllipsoid(context, eye) {
                         // if the ray intersects the object, and is closest yet
                         if (intersection.t < closest) {
                             closest = intersection.t;
-                            color = ellipsoidColor(inputEllipsoids[e], intersection.intersection, inputLights, eye);
+                            intersection_vector = intersection.intersection
+                            ellipsoid = inputEllipsoids[e];
                         }
                     }
-                    drawPixel(imagedata, i, j, color);
                 }
+                if (intersection_vector) {
+                    color = ellipsoidColor(ellipsoid, intersection_vector, inputLights, eye);
+                }
+                drawPixel(imagedata, i, j, color);
                 s += 1 / w;
             }
             t -= 1 / h;
@@ -429,5 +457,5 @@ function main() {
             // set and scale the current location of mouse
             drawRayCastTriangles(context, eye);
         }
-    }   , false);
+    }, false);
 }
