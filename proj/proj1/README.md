@@ -1,2 +1,3 @@
-# prog1-2022-solution
-This repo branch contains the solution for program 1 from cg class 2022 at nc state (ray tracing boxes).
+# Project 1: Ray Casting
+
+Press spacebar to see the light change position randomly as well as triangles rendered
