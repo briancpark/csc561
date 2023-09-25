@@ -1,9 +1,13 @@
 /* Constants */
-const PIXEL_DENSITY = 0.01;
-const INPUT_ELLIPSOIDS_URL = "attributes/ellipsoids.json";
+const INPUT_ELLIPSOIDS_URL = "https://ncsucgclass.github.io/prog1/ellipsoids.json";
 const INPUT_LIGHTS_URL = "attributes/lights.json";
 const INPUT_BOXES_URL = "attributes/boxes.json";
-const INPUT_TRIANGLES_URL = "attributes/triangles.json";
+const INPUT_TRIANGLES_URL = "attributes/triangles2.json";
+
+
+var light_x = Math.random() * 4 - 2;
+var light_y = Math.random() * 4 - 2;
+var light_z = Math.random() * 4 - 2;
 
 /* classes */
 
@@ -221,7 +225,6 @@ function ellipsoidColor(ellipsoid, intersection, lights, eye) {
 
     for (let i = 0; i < lights.length; i++) {
         var light = lights[i];
-        // var light_location = new Vector(light.x, light.y, light.z);
         var light_location = new Vector(-0.5, 1.5, -0.5);
         var e_ambient = new Vector(ellipsoid.ambient[0], ellipsoid.ambient[1], ellipsoid.ambient[2]);
         var l_ambient = new Vector(light.ambient[0], light.ambient[1], light.ambient[2]);
@@ -255,8 +258,8 @@ function triangleColor(triangle, intersection, lights, eye) {
 
     for (let i = 0; i < lights.length; i++) {
         var light = lights[i];
-        // var light_location = new Vector(light.x, light.y, light.z);
-        var light_location = new Vector(-0.5, 1.5, -0.5);
+        // random light between -2 and 2
+        var light_location = new Vector(light_x, light_y, light_z);
 
         var e_ambient = new Vector(triangle.material.ambient[0], triangle.material.ambient[1], triangle.material.ambient[2]);
         var l_ambient = new Vector(light.ambient[0], light.ambient[1], light.ambient[2]);
@@ -442,17 +445,16 @@ function main() {
 
     var eye = new Vector(0.5, 0.5, -0.5);
 
-    // time the ellipsoid drawing
-    var startTime = Date.now();
     drawRayCastEllipsoid(context, eye);
-    var ellipsoidTime = Date.now() - startTime;
-    console.log("Ellipsoid drawing time = " + ellipsoidTime + "ms");
 
     // after pressing spacebar the cursor will change
     document.addEventListener('keydown', function (event) {
         if (event.keyCode === 32) {
             // clear the canvas
             context.clearRect(0, 0, canvas.width, canvas.height);
+            light_x = Math.random() * 4 - 2;
+            light_y = Math.random() * 4 - 2;
+            light_z = Math.random() * 4 - 2;
 
             // set and scale the current location of mouse
             drawRayCastTriangles(context, eye);
