@@ -1,2 +1,3 @@
-# prog2
-helper files for the intro cg class's second programming assignment
+# Project 2: WebGL Intro
+
+Press spacebar to see the color change randomly. Press it again each time to get a unique color gradient!

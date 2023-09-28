@@ -66,7 +66,7 @@ function setupWebGL() {
 } // end setupWebGL
 
 // read triangles in, load them into webgl buffers
-function loadTriangles() {
+function loadTriangles(random = false) {
     var inputTriangles = getJSONFile(INPUT_TRIANGLES_URL, "triangles");
     if (inputTriangles != String.null) {
         var whichSetVert; // index of vertex in current triangle set
@@ -86,7 +86,11 @@ function loadTriangles() {
             for (whichSetVert = 0; whichSetVert < inputTriangles[whichSet].vertices.length; whichSetVert++) {
                 vtxToAdd = inputTriangles[whichSet].vertices[whichSetVert];
                 coordArray.push(vtxToAdd[0], vtxToAdd[1], vtxToAdd[2]);
-                coordArray.push(inputTriangles[whichSet].material.diffuse[0], inputTriangles[whichSet].material.diffuse[1], inputTriangles[whichSet].material.diffuse[2]);
+                if (random == true) {
+                    coordArray.push(Math.random(), Math.random(), Math.random());
+                } else {
+                    coordArray.push(inputTriangles[whichSet].material.diffuse[0], inputTriangles[whichSet].material.diffuse[1], inputTriangles[whichSet].material.diffuse[2]);
+                }
             } // end for vertices in set
 
             // set up the triangle index array, adjusting indices across sets
@@ -204,5 +208,23 @@ function main() {
     loadTriangles(); // load in the triangles from tri file
     setupShaders(); // setup the webGL shaders
     renderTriangles(); // draw the triangles using webGL
+
+    document.addEventListener('keydown', function (event) {
+        if (event.keyCode === 32) {
+            // clear the canvas
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); // clear frame/depth buffers
+            // clear the buffers
+            gl.deleteBuffer(vertexBuffer);
+            gl.deleteBuffer(triangleBuffer);
+
+            // reset variables
+            triBufferSize = 0;
+            colorBufferSize = 0;
+
+            loadTriangles(true); // load in the triangles from tri file
+            setupShaders(); // setup the webGL shaders
+            renderTriangles(); // draw the triangles using webGL
+        }
+    }, false);
 
 } // end main
