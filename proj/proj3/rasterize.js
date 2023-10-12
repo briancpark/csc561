@@ -151,6 +151,11 @@ function loadTriangles() {
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer); // activate that buffer
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indexArray), gl.STATIC_DRAW); // indices to th
     }
+
+  var inputLights = getJSONFile(INPUT_LIGHTS_URL, "lights");
+    if (inputLights != String.null) {
+
+    }
 }
 
 // setup the webGL shaders
@@ -267,9 +272,6 @@ function renderTriangles() {
 } // end render triangles
 
 function main() {
-    var lights = getJSONFile(INPUT_LIGHTS_URL, "lights");
-    console.log(lights);
-
     setupWebGL(); // set up the webGL environment
     loadTriangles(); // load in the triangles from tri file
     setupShaders(); // setup the webGL shaders
