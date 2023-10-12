@@ -21,6 +21,10 @@ var ambientBuffer;
 var specularBuffer;
 var normalBuffer;
 
+var lightVertexArray = [];
+var ambientArray = [];
+var diffuseArray = [];
+var specularArray = [];
 
 var altPosition; // flag indicating whether to alter vertex positions
 var altPositionUniform; // where to put altPosition flag for vertex shader
@@ -113,10 +117,10 @@ function loadTriangles() {
             diffuseArray.push(...data.vertices.map(() => [...data.material.diffuse, 1.0]).flat());
             ambientArray.push(...data.vertices.map(() => [...data.material.ambient, 1.0]).flat());
             specularArray.push(...data.vertices.map(() => [...data.material.specular, 1.0]).flat());
-            // nArray.push(...data.vertices.map(() => [...data.material.n, 1.0]).flat());
 
             offset += data.vertices.length;
         })
+
 
 
         triBufferSize = indexArray.length; // now total number of indices
@@ -138,9 +142,12 @@ function loadTriangles() {
         gl.bindBuffer(gl.ARRAY_BUFFER, specularBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(specularArray), gl.STATIC_DRAW);
 
-        // nBuffer = gl.createBuffer();
-        // gl.bindBuffer(gl.ARRAY_BUFFER, nBuffer);
-        // gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(nArray), gl.STATIC_DRAW);
+
+        nArray = inputTriangles.map(triangle => triangle.vertices.map(() => triangle.material.n).flat()).flat();
+        console.log(nArray);
+        nBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, nBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(nArray), gl.STATIC_DRAW);
 
         normalBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
@@ -149,11 +156,22 @@ function loadTriangles() {
         // send the triangle indices to webGL
         indexBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer); // activate that buffer
-        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indexArray), gl.STATIC_DRAW); // indices to th
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indexArray), gl.STATIC_DRAW);
     }
 
-  var inputLights = getJSONFile(INPUT_LIGHTS_URL, "lights");
+    var inputLights = getJSONFile(INPUT_LIGHTS_URL, "lights");
     if (inputLights != String.null) {
+
+        inputLights.forEach(data => {
+            lightVertexArray.push(data.x, data.y, data.z);
+        });
+
+        // append 1
+        inputLights.forEach(data => {
+            diffuseArray.push(...data.diffuse, 1.0);
+            ambientArray.push(...data.ambient, 1.0);
+            specularArray.push(...data.specular, 1.0);
+        });
 
     }
 }
@@ -171,10 +189,16 @@ function setupShaders() {
         varying vec4 vAmbient;
         varying vec4 vDiffuse;
         varying vec4 vSpecular;
+        varying vec4 vNormal;
         varying vec4 v_n;
         
         void main(void) {
-            gl_FragColor = vDiffuse;
+            vec4 diffuse = max(dot(vL, vN), 0.0) * vDiffuse;
+            vec4 H = normalize(vL+vE);
+            vec4 specular = pow(max(dot(vN, H), 0.0), v_n.x) * vSpecular;   
+            vec4 fColor = vAmbient + diffuse + vSpecular;
+            fColor.a = 1.0;
+            gl_FragColor = fColor;
         }
     `;
 
@@ -182,24 +206,52 @@ function setupShaders() {
     var vShaderCode = `
         attribute vec3 vertexPosition;
         attribute vec4 aDiffuse;
+        attribute vec4 aAmbient;
+        attribute vec4 aSpecular;
+        attribute vec4 aNormal;
+        attribute float a_n;
         uniform bool altPosition;
-
+        
         varying vec4 vL;
         varying vec4 vN;
         varying vec4 vE;
         varying vec4 vAmbient;
         varying vec4 vDiffuse;
         varying vec4 vSpecular;
+        varying vec4 vNormal;
         varying vec4 v_n;
+        
+        uniform vec4 uLightAmbient;
+        uniform vec4 uLightDiffuse;
+        uniform vec4 uLightSpecular;
+                
+        uniform mat4 uModelViewMatrix;
+        uniform mat4 uProjectionMatrix;
+        uniform vec4 uLightPosition;
+
 
         void main(void) {
             vDiffuse = aDiffuse;
+            vSpecular = aSpecular;
+            vAmbient = aAmbient;
+ 
+            vL = normalize(uLightPosition - vec4(vertexPosition, 1.0));
+            vN = normalize(aNormal);
+            vE = normalize(vec4(0.0, 0.0, 0.0, 1.0) - vec4(vertexPosition, 1.0));
+            
+            vSpecular = aSpecular;
+            vDiffuse = aDiffuse;
+            vAmbient = aAmbient;
+            vNormal = aNormal;
+            v_n = vec4(a_n, a_n, a_n, a_n);
             
             
-            if(altPosition)
-                gl_Position = vec4(vertexPosition + vec3(-1.0, -1.0, 0.0), 1.0); // use the altered position
-            else
-                gl_Position = vec4(vertexPosition, 1.0); // use the untransformed position
+            gl_Position = vec4(vertexPosition, 1.0);
+            
+            // if(altPosition)
+            //     gl_Position = vec4(vertexPosition + vec3(-1.0, -1.0, 0.0), 1.0); // use the altered position
+            // else
+            //     gl_Position = vec4(vertexPosition, 1.0); // use the untransformed position
         }
     `;
 
@@ -255,18 +307,63 @@ function renderTriangles() {
     var vertexPositionAttrib = gl.getAttribLocation(shaderProgram, "vertexPosition");
     gl.enableVertexAttribArray(vertexPositionAttrib);
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-    gl.vertexAttribPointer(vertexPositionAttrib, 3, gl.FLOAT, false, 0, 0); // feed
+    gl.vertexAttribPointer(vertexPositionAttrib, 3, gl.FLOAT, false, 0, 0);
 
-    vertexColorAttrib = gl.getAttribLocation(shaderProgram, "aDiffuse");
-    gl.enableVertexAttribArray(vertexColorAttrib);
+    var vertexDiffuseAttrib = gl.getAttribLocation(shaderProgram, "aDiffuse");
+    gl.enableVertexAttribArray(vertexDiffuseAttrib);
     gl.bindBuffer(gl.ARRAY_BUFFER, diffuseBuffer);
-    gl.vertexAttribPointer(vertexColorAttrib, 4, gl.FLOAT, false, 0, 0); // feed
+    gl.vertexAttribPointer(vertexDiffuseAttrib, 4, gl.FLOAT, false, 0, 0);
+
+    var vertexAmbientAtrrib = gl.getAttribLocation(shaderProgram, "aAmbient");
+    gl.enableVertexAttribArray(vertexAmbientAtrrib);
+    gl.bindBuffer(gl.ARRAY_BUFFER, ambientBuffer);
+    gl.vertexAttribPointer(vertexAmbientAtrrib, 4, gl.FLOAT, false, 0, 0);
+
+    var vertexSpecularAtrrib = gl.getAttribLocation(shaderProgram, "aSpecular");
+    gl.enableVertexAttribArray(vertexSpecularAtrrib);
+    gl.bindBuffer(gl.ARRAY_BUFFER, specularBuffer);
+    gl.vertexAttribPointer(vertexSpecularAtrrib, 4, gl.FLOAT, false, 0, 0);
+
+    var vertexNormalAttrib = gl.getAttribLocation(shaderProgram, "aNormal");
+    gl.enableVertexAttribArray(vertexNormalAttrib);
+    gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
+    gl.vertexAttribPointer(vertexNormalAttrib, 3, gl.FLOAT, false, 0, 0);
+
+    var vertexNAttrib = gl.getAttribLocation(shaderProgram, "a_n");
+    gl.enableVertexAttribArray(vertexNAttrib);
+    gl.bindBuffer(gl.ARRAY_BUFFER, nBuffer);
+    gl.vertexAttribPointer(vertexNAttrib, 1, gl.FLOAT, false, 0, 0);
+
+
+    // Move the uniform
+    var lightPositionAttrib = gl.getUniformLocation(shaderProgram, "uLightPosition");
+    gl.uniform4fv(
+        lightPositionAttrib,
+        lightVertexArray.concat([1.0]),
+    );
+
+    var lightDiffuseAttrib = gl.getUniformLocation(shaderProgram, "uLightDiffuse");
+    gl.uniform4fv(
+        lightDiffuseAttrib,
+        diffuseArray.concat([1.0]),
+    )
+
+    var lightAmbientAttrib = gl.getUniformLocation(shaderProgram, "uLightAmbient");
+    gl.uniform4fv(
+        lightAmbientAttrib,
+        ambientArray.concat([1.0]),
+    )
+
+    var lightSpecularAttrib = gl.getUniformLocation(shaderProgram, "uLightSpecular");
+    gl.uniform4fv(
+        lightSpecularAttrib,
+        specularArray.concat([1.0]),
+    )
 
 
     altPositionUniform = gl.getUniformLocation(shaderProgram, "altPosition");
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
     gl.uniform1i(altPositionUniform, altPosition);
-
 
     gl.drawElements(gl.TRIANGLES, triBufferSize, gl.UNSIGNED_SHORT, 0);
 } // end render triangles
@@ -288,19 +385,29 @@ function main() {
 
     document.addEventListener('keydown', function (event) {
         switch (event.key) {
-            case 65: // a
+            case "a": // a
                 break;
-            case 68: // d
-                break;
-
-            case 87: // w
-                break;
-            case 83: // s
+            case "d": // d
                 break;
 
-            case 81: // q
+            case "w": // w
                 break;
-            case 69: // e
+            case "s": // s
+                break;
+
+            case "q": // q
+                break;
+            case "e": // e
+                break;
+
+            case "A": // a
+                break;
+            case "D": // d
+                break;
+
+            case "W": // w
+                break;
+            case "S": // s
                 break;
 
             default:
