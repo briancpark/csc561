@@ -10,7 +10,7 @@ const INPUT_TRIANGLES_URL = "triangles.json"; // triangles file loc
 const INPUT_ELLIPSOIDS_URL = "ellipsoids.json";
 const INPUT_LIGHTS_URL = "lights.json";
 const INPUT_SPHERES_URL = "spheres.json"; // spheres file loc
-var Eye = new vec4.fromValues(0.5, 0.5, -0.5, 1.0); // default eye position in world space
+var Eye = [0.5, 0.5, -0.5, 1.0]; // default eye position in world space
 
 /* webgl globals */
 var gl = null; // the all powerful gl object. It's all here folks!
@@ -20,6 +20,7 @@ var indexBuffer; // this contains indices into vertexBuffer in triples
 var ambientBuffer;
 var specularBuffer;
 var normalBuffer;
+var eyeBuffer;
 
 var lightVertexArray = [];
 var ambientArray = [];
@@ -97,6 +98,7 @@ function loadTriangles() {
         var diffuseArray = [];
         var specularArray = [];
         var nArray = [];
+        var eyeArray = [];
 
         // Vertex, Normals, Triangle Indices
         var vertexArray = [];
@@ -106,6 +108,7 @@ function loadTriangles() {
         inputTriangles.forEach(data => {
             vertexArray.push(...data.vertices.flat());
             normalArray.push(...data.normals.flat());
+            eyeArray.push(...data.vertices.map(() => Eye).flat());
         });
 
         var offset = 0;
@@ -121,14 +124,16 @@ function loadTriangles() {
             offset += data.vertices.length;
         })
 
-
-
         triBufferSize = indexArray.length; // now total number of indices
 
         // send the vertex coords to webGL
         vertexBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexArray), gl.STATIC_DRAW);
+
+        eyeBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, eyeBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(eyeArray), gl.STATIC_DRAW);
 
         diffuseBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, diffuseBuffer);
@@ -144,7 +149,6 @@ function loadTriangles() {
 
 
         nArray = inputTriangles.map(triangle => triangle.vertices.map(() => triangle.material.n).flat()).flat();
-        console.log(nArray);
         nBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, nBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(nArray), gl.STATIC_DRAW);
@@ -205,12 +209,16 @@ function setupShaders() {
     // define vertex shader in essl using es6 template strings
     var vShaderCode = `
         attribute vec3 vertexPosition;
+        attribute vec4 aEye;
         attribute vec4 aDiffuse;
         attribute vec4 aAmbient;
         attribute vec4 aSpecular;
         attribute vec4 aNormal;
         attribute float a_n;
+        
+        
         uniform bool altPosition;
+        
         
         varying vec4 vL;
         varying vec4 vN;
@@ -237,7 +245,7 @@ function setupShaders() {
  
             vL = normalize(uLightPosition - vec4(vertexPosition, 1.0));
             vN = normalize(aNormal);
-            vE = normalize(vec4(0.0, 0.0, 0.0, 1.0) - vec4(vertexPosition, 1.0));
+            vE = normalize(aEye - vec4(vertexPosition, 1.0));
             
             vSpecular = aSpecular;
             vDiffuse = aDiffuse;
@@ -308,6 +316,11 @@ function renderTriangles() {
     gl.enableVertexAttribArray(vertexPositionAttrib);
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
     gl.vertexAttribPointer(vertexPositionAttrib, 3, gl.FLOAT, false, 0, 0);
+
+    var vertexEyeAttrib = gl.getAttribLocation(shaderProgram, "aEye");
+    gl.enableVertexAttribArray(vertexEyeAttrib);
+    gl.bindBuffer(gl.ARRAY_BUFFER, eyeBuffer);
+    gl.vertexAttribPointer(vertexEyeAttrib, 4, gl.FLOAT, false, 0, 0);
 
     var vertexDiffuseAttrib = gl.getAttribLocation(shaderProgram, "aDiffuse");
     gl.enableVertexAttribArray(vertexDiffuseAttrib);
