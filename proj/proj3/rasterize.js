@@ -1,22 +1,13 @@
-/* GLOBAL CONSTANTS AND VARIABLES */
-
-/* assignment specific globals */
-const WIN_Z = 0;  // default graphics window z coord in world space
-const WIN_LEFT = 0;
-const WIN_RIGHT = 1;  // default left and right x coords in world space
-const WIN_BOTTOM = 0;
-const WIN_TOP = 1;  // default top and bottom y coords in world space
-const INPUT_TRIANGLES_URL = "triangles.json"; // triangles file loc
+const INPUT_TRIANGLES_URL = "triangles.json";
 const INPUT_ELLIPSOIDS_URL = "ellipsoids.json";
 const INPUT_LIGHTS_URL = "lights.json";
-const INPUT_SPHERES_URL = "spheres.json"; // spheres file loc
-var Eye = [0.5, 0.5, -0.5, 1.0]; // default eye position in world space
+const INPUT_SPHERES_URL = "spheres.json";
+var Eye = [0.5, 0.5, -0.5, 1.0];
 
-/* webgl globals */
-var gl = null; // the all powerful gl object. It's all here folks!
+var gl = null;
 var diffuseBuffer;
-var vertexBuffer; // this contains vertex coordinates in triples
-var indexBuffer; // this contains indices into vertexBuffer in triples
+var vertexBuffer;
+var indexBuffer;
 var ambientBuffer;
 var specularBuffer;
 var normalBuffer;
@@ -29,80 +20,72 @@ var ambientArray = [];
 var diffuseArray = [];
 var specularArray = [];
 
-var altPosition; // flag indicating whether to alter vertex positions
-var altPositionUniform; // where to put altPosition flag for vertex shader
-var triBufferSize; // the number of indices in the triangle buffer
+var triBufferSize;
 var colorBufferSize;
-var vtxBufferSize; // the number of vertices in the vertex buffer
+var vtxBufferSize;
 var shaderProgram;
-// ASSIGNMENT HELPER FUNCTIONS
 
-// get the JSON file from the passed URL
+
+const eye = [0.5, 0.5, -0.5];
+const up = [0, 1, 0];
+const at = [0, 0, 1];
+
+
 function getJSONFile(url, descr) {
     try {
         if ((typeof (url) !== "string") || (typeof (descr) !== "string"))
             throw "getJSONFile: parameter not a string";
         else {
-            var httpReq = new XMLHttpRequest(); // a new http request
-            httpReq.open("GET", url, false); // init the request
-            httpReq.send(null); // send the request
+            var httpReq = new XMLHttpRequest();
+            httpReq.open("GET", url, false);
+            httpReq.send(null);
             var startTime = Date.now();
             while ((httpReq.status !== 200) && (httpReq.readyState !== XMLHttpRequest.DONE)) {
                 if ((Date.now() - startTime) > 3000)
                     break;
-            } // until its loaded or we time out after three seconds
+            }
             if ((httpReq.status !== 200) || (httpReq.readyState !== XMLHttpRequest.DONE))
                 throw "Unable to open " + descr + " file!";
             else
                 return JSON.parse(httpReq.response);
-        } // end if good params
-    } // end try
-
-    catch (e) {
+        }
+    } catch (e) {
         console.log(e);
         return (String.null);
     }
-} // end get input spheres
+}
 
-// set up the webGL environment
 function setupWebGL() {
-
-    // Get the canvas and context
-    var canvas = document.getElementById("myWebGLCanvas"); // create a js canvas
-    gl = canvas.getContext("webgl"); // get a webgl object from it
+    var canvas = document.getElementById("myWebGLCanvas");
+    gl = canvas.getContext("webgl");
 
     try {
         if (gl == null) {
             throw "unable to create gl context -- is your browser gl ready?";
         } else {
-            gl.clearColor(0.0, 0.0, 0.0, 1.0); // use black when we clear the frame buffer
-            gl.clearDepth(1.0); // use max when we clear the depth buffer
-            gl.enable(gl.DEPTH_TEST); // use hidden surface removal (with zbuffering)
+            gl.clearColor(0.0, 0.0, 0.0, 1.0);
+            gl.clearDepth(1.0);
+            gl.enable(gl.DEPTH_TEST);
         }
-    } // end try
-
-    catch (e) {
+    } catch (e) {
         console.log(e);
-    } // end catch
+    }
 
-} // end setupWebGL
+}
 
-// read triangles in, load them into webgl buffers
 function loadTriangles() {
-    triBufferSize = 0; // the number of indices in the triangle buffer
+    triBufferSize = 0;
     colorBufferSize = 0;
-    vtxBufferSize = 0; // the number of vertices in the vertex buffer
+    vtxBufferSize = 0;
 
     var inputTriangles = getJSONFile(INPUT_TRIANGLES_URL, "triangles");
     if (inputTriangles != String.null) {
-        // Material
         var ambientArray = [];
         var diffuseArray = [];
         var specularArray = [];
         var nArray = [];
         var eyeArray = [];
 
-        // Vertex, Normals, Triangle Indices
         var vertexArray = [];
         var normalArray = [];
         var indexArray = [];
@@ -130,9 +113,8 @@ function loadTriangles() {
 
         inputTriangles.forEach(() => selectionMatrices.push(mat4.create()));
 
-        triBufferSize = indexArray.length; // now total number of indices
+        triBufferSize = indexArray.length;
 
-        // send the vertex coords to webGL
         vertexBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexArray), gl.STATIC_DRAW);
@@ -150,7 +132,6 @@ function loadTriangles() {
             });
         });
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(selectionBufferData), gl.STATIC_DRAW);
-        console.log(selectionBufferData);
 
         diffuseBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, diffuseBuffer);
@@ -172,9 +153,8 @@ function loadTriangles() {
         gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normalArray), gl.STATIC_DRAW);
 
-        // send the triangle indices to webGL
         indexBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer); // activate that buffer
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indexArray), gl.STATIC_DRAW);
     }
 
@@ -193,10 +173,7 @@ function loadTriangles() {
     }
 }
 
-// setup the webGL shaders
 function setupShaders() {
-
-    // define fragment shader in essl using es6 template strings
     var fShaderCode = `
         precision highp float;
        
@@ -207,21 +184,19 @@ function setupShaders() {
         varying vec4 vDiffuse;
         varying vec4 vSpecular;
         varying vec4 vNormal;
-        varying vec4 v_n;
+        varying float v_n;
         
         void main(void) {
             vec4 diffuse = max(dot(vL, vN), 0.0) * vDiffuse;
-            vec4 H = normalize(vL+vE);
-            vec4 specular = pow(max(dot(vN, H), 0.0), v_n.x) * vSpecular;   
+            vec4 H = normalize(vL + vE);
+            vec4 specular = pow(max(dot(vN, H), 0.0), v_n) * vSpecular;   
             vec4 fColor = vAmbient + diffuse + vSpecular;
-            fColor.a = 1.0;
             gl_FragColor = fColor;
         }
     `;
 
-    // define vertex shader in essl using es6 template strings
     var vShaderCode = `
-        attribute vec3 vertexPosition;
+        attribute vec4 vertexPosition;
         attribute vec4 aEye;
         attribute mat4 aSelectionMatrix;
         attribute vec4 aDiffuse;
@@ -231,8 +206,13 @@ function setupShaders() {
         attribute float a_n;
         
         
-        uniform bool altPosition;
-        
+        uniform mat4 uModelViewMatrix;
+        uniform mat4 uProjectionMatrix;
+        uniform vec4 uLightPosition;
+
+        uniform vec4 uLightAmbient;
+        uniform vec4 uLightDiffuse;
+        uniform vec4 uLightSpecular;
         
         varying vec4 vL;
         varying vec4 vN;
@@ -241,140 +221,142 @@ function setupShaders() {
         varying vec4 vDiffuse;
         varying vec4 vSpecular;
         varying vec4 vNormal;
-        varying vec4 v_n;
-        
-        uniform vec4 uLightAmbient;
-        uniform vec4 uLightDiffuse;
-        uniform vec4 uLightSpecular;
+        varying float v_n;
+
                 
-        uniform mat4 uModelViewMatrix;
-        uniform mat4 uProjectionMatrix;
-        uniform vec4 uLightPosition;
-
-
         void main(void) {
-            vDiffuse = aDiffuse;
-            vSpecular = aSpecular;
-            vAmbient = aAmbient;
- 
-            vL = normalize(uLightPosition - vec4(vertexPosition, 1.0));
+        //uProjectionMatrix * uModelViewMatrix *
+            gl_Position =  aSelectionMatrix * vertexPosition;
+            vec4 lightPos = uModelViewMatrix * uLightPosition;
+            vL = normalize(lightPos - vertexPosition);
             vN = normalize(aNormal);
-            vE = normalize(aEye - vec4(vertexPosition, 1.0));
+            vE = normalize(aEye - vertexPosition);
             
             vSpecular = aSpecular;
             vDiffuse = aDiffuse;
             vAmbient = aAmbient;
-            vNormal = aNormal;
-            v_n = vec4(a_n, a_n, a_n, a_n);
-            
-            // gl_Position = uProjectionMatrix * uModelViewMatrix * aSelectionMatrix * vec4(vertexPosition, 1.0);
-            gl_Position = aSelectionMatrix * vec4(vertexPosition, 1.0);
+            v_n = a_n;
         }
     `;
 
     try {
-        // console.log("fragment shader: "+fShaderCode);
-        var fShader = gl.createShader(gl.FRAGMENT_SHADER); // create frag shader
-        gl.shaderSource(fShader, fShaderCode); // attach code to shader
-        gl.compileShader(fShader); // compile the code for gpu execution
+        var fShader = gl.createShader(gl.FRAGMENT_SHADER);
+        gl.shaderSource(fShader, fShaderCode);
+        gl.compileShader(fShader);
 
-        // console.log("vertex shader: "+vShaderCode);
-        var vShader = gl.createShader(gl.VERTEX_SHADER); // create vertex shader
-        gl.shaderSource(vShader, vShaderCode); // attach code to shader
-        gl.compileShader(vShader); // compile the code for gpu execution
+        var vShader = gl.createShader(gl.VERTEX_SHADER);
+        gl.shaderSource(vShader, vShaderCode);
+        gl.compileShader(vShader);
 
-        if (!gl.getShaderParameter(fShader, gl.COMPILE_STATUS)) { // bad frag shader compile
+        if (!gl.getShaderParameter(fShader, gl.COMPILE_STATUS)) {
             throw "error during fragment shader compile: " + gl.getShaderInfoLog(fShader);
             gl.deleteShader(fShader);
-        } else if (!gl.getShaderParameter(vShader, gl.COMPILE_STATUS)) { // bad vertex shader compile
+        } else if (!gl.getShaderParameter(vShader, gl.COMPILE_STATUS)) {
             throw "error during vertex shader compile: " + gl.getShaderInfoLog(vShader);
             gl.deleteShader(vShader);
-        } else { // no compile errors
-            shaderProgram = gl.createProgram(); // create the single shader program
-            gl.attachShader(shaderProgram, fShader); // put frag shader in program
-            gl.attachShader(shaderProgram, vShader); // put vertex shader in program
-            gl.linkProgram(shaderProgram); // link program into gl context
+        } else {
+            shaderProgram = gl.createProgram();
+            gl.attachShader(shaderProgram, fShader);
+            gl.attachShader(shaderProgram, vShader);
+            gl.linkProgram(shaderProgram);
 
-            if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) { // bad program link
+            if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
                 throw "error during shader program linking: " + gl.getProgramInfoLog(shaderProgram);
             }
-        } // end if no compile errors
-    } // end try
-
-    catch (e) {
+        }
+    } catch (e) {
         console.log(e);
-    } // end catch
+    }
     altPosition = false;
     setTimeout(function alterPosition() {
         altPosition = !altPosition;
         setTimeout(alterPosition, 2000);
-    }, 2000); // switch flag value every 2 seconds
-} // end setup shaders
-var bgColor = 0;
+    }, 2000);
+}
 
-// render the loaded model
+
 function renderTriangles() {
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); // clear frame/depth buffers
-    bgColor = (bgColor < 1) ? (bgColor + 0.001) : 0;
-    gl.clearColor(bgColor, 0, 0, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     requestAnimationFrame(renderTriangles);
 
-    gl.useProgram(shaderProgram); // activate shader program (frag and vert)
-
     var vertexPositionAttrib = gl.getAttribLocation(shaderProgram, "vertexPosition");
-    gl.enableVertexAttribArray(vertexPositionAttrib);
+    var selectionMatrixAttrib = gl.getAttribLocation(shaderProgram, "aSelectionMatrix");
+    var vertexEyeAttrib = gl.getAttribLocation(shaderProgram, "aEye");
+    var vertexDiffuseAttrib = gl.getAttribLocation(shaderProgram, "aDiffuse");
+    var vertexAmbientAtrrib = gl.getAttribLocation(shaderProgram, "aAmbient");
+    var vertexSpecularAtrrib = gl.getAttribLocation(shaderProgram, "aSpecular");
+    var vertexNormalAttrib = gl.getAttribLocation(shaderProgram, "aNormal");
+    var vertexNAttrib = gl.getAttribLocation(shaderProgram, "a_n");
+
+    var modelViewMatrixAttrib = gl.getUniformLocation(shaderProgram, "uModelViewMatrix");
+    var projectionMatrixAttrib = gl.getUniformLocation(shaderProgram, "uProjectionMatrix");
+    var lightPositionAttrib = gl.getUniformLocation(shaderProgram, "uLightPosition");
+
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
     gl.vertexAttribPointer(vertexPositionAttrib, 3, gl.FLOAT, false, 0, 0);
 
-    var selectionMatrixAttrib = gl.getAttribLocation(shaderProgram, "aSelectionMatrix");
     gl.bindBuffer(gl.ARRAY_BUFFER, selectionBuffer);
     for (let offsetIdx = 0; offsetIdx < 4; offsetIdx++) {
-        gl.enableVertexAttribArray(selectionMatrixAttrib + offsetIdx);
         gl.vertexAttribPointer(selectionMatrixAttrib + offsetIdx, 4, gl.FLOAT, false, 64, offsetIdx * 16);
+        gl.enableVertexAttribArray(selectionMatrixAttrib + offsetIdx);
     }
 
-    var vertexEyeAttrib = gl.getAttribLocation(shaderProgram, "aEye");
-    gl.enableVertexAttribArray(vertexEyeAttrib);
+
     gl.bindBuffer(gl.ARRAY_BUFFER, eyeBuffer);
     gl.vertexAttribPointer(vertexEyeAttrib, 4, gl.FLOAT, false, 0, 0);
 
-    var vertexDiffuseAttrib = gl.getAttribLocation(shaderProgram, "aDiffuse");
-    gl.enableVertexAttribArray(vertexDiffuseAttrib);
     gl.bindBuffer(gl.ARRAY_BUFFER, diffuseBuffer);
     gl.vertexAttribPointer(vertexDiffuseAttrib, 4, gl.FLOAT, false, 0, 0);
 
-    var vertexAmbientAtrrib = gl.getAttribLocation(shaderProgram, "aAmbient");
-    gl.enableVertexAttribArray(vertexAmbientAtrrib);
+
     gl.bindBuffer(gl.ARRAY_BUFFER, ambientBuffer);
     gl.vertexAttribPointer(vertexAmbientAtrrib, 4, gl.FLOAT, false, 0, 0);
 
-    var vertexSpecularAtrrib = gl.getAttribLocation(shaderProgram, "aSpecular");
-    gl.enableVertexAttribArray(vertexSpecularAtrrib);
     gl.bindBuffer(gl.ARRAY_BUFFER, specularBuffer);
     gl.vertexAttribPointer(vertexSpecularAtrrib, 4, gl.FLOAT, false, 0, 0);
 
-    var vertexNormalAttrib = gl.getAttribLocation(shaderProgram, "aNormal");
-    gl.enableVertexAttribArray(vertexNormalAttrib);
     gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
     gl.vertexAttribPointer(vertexNormalAttrib, 3, gl.FLOAT, false, 0, 0);
 
-    var vertexNAttrib = gl.getAttribLocation(shaderProgram, "a_n");
-    gl.enableVertexAttribArray(vertexNAttrib);
     gl.bindBuffer(gl.ARRAY_BUFFER, nBuffer);
     gl.vertexAttribPointer(vertexNAttrib, 1, gl.FLOAT, false, 0, 0);
 
-    var modelViewMatrix = gl.getUniformLocation(shaderProgram, "uModelViewMatrix");
-    gl.getUniformLocation(shaderProgram, "uModelViewMatrix");
+    gl.enableVertexAttribArray(vertexPositionAttrib);
+    gl.enableVertexAttribArray(vertexEyeAttrib);
+    gl.enableVertexAttribArray(vertexDiffuseAttrib);
+    gl.enableVertexAttribArray(vertexAmbientAtrrib);
+    gl.enableVertexAttribArray(vertexSpecularAtrrib);
+    gl.enableVertexAttribArray(vertexNormalAttrib);
+    gl.enableVertexAttribArray(vertexNAttrib);
 
 
-    // var projectionMatrix = mat4.create();
-    //
-    // var projectionMatrixAttrib = gl.getUniformLocation(shaderProgram, "uProjectionMatrix");
-    // gl.getUniformLocation(shaderProgram, "uProjectionMatrix");
+    const fov = (90 * Math.PI) / 180;
+    const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
+    const near = 0;
+    const far = 1;
+    const projectionMatrix = mat4.create();
+    mat4.perspective(projectionMatrix, fov, aspect, near, far);
 
 
-    // Move the uniform
-    var lightPositionAttrib = gl.getUniformLocation(shaderProgram, "uLightPosition");
+    const center = vec3.create();
+    vec3.add(center, eye, at);
+
+    const modelViewMatrix = mat4.create();
+    mat4.lookAt(modelViewMatrix, eye, center, up);
+
+    gl.useProgram(shaderProgram);
+
+    gl.uniformMatrix4fv(
+        projectionMatrixAttrib,
+        false,
+        projectionMatrix);
+
+    gl.uniformMatrix4fv(
+        modelViewMatrixAttrib,
+        false,
+        modelViewMatrix);
+
+
     gl.uniform4fv(
         lightPositionAttrib,
         lightVertexArray.concat([1.0]),
@@ -398,20 +380,14 @@ function renderTriangles() {
         specularArray.concat([1.0]),
     )
 
-
-    altPositionUniform = gl.getUniformLocation(shaderProgram, "altPosition");
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-    gl.uniform1i(altPositionUniform, altPosition);
-
     gl.drawElements(gl.TRIANGLES, triBufferSize, gl.UNSIGNED_SHORT, 0);
-} // end render triangles
+}
 
 function main() {
-    setupWebGL(); // set up the webGL environment
-    loadTriangles(); // load in the triangles from tri file
-    setupShaders(); // setup the webGL shaders
-    renderTriangles(); // draw the triangles using webGL
-
+    setupWebGL();
+    loadTriangles();
+    setupShaders();
+    renderTriangles();
 
     /*
         a and d — translate view left (a) and right (d) along view X
@@ -421,44 +397,40 @@ function main() {
         W and S — rotate view forward (W) and backward (S) around view X (pitch)
     */
 
-    document.addEventListener('keydown', function (event) {
-        const delta = 0.5;
-        // loadTriangles(true); // load in the triangles from tri file
-        switch (event.key) {
-            case "a": // a
-                Eye[0] += delta;
-                break;
-            case "d": // d
-                break;
+    // document.addEventListener('keydown', function (event) {
+    //     const delta = 0.5;
+    //     // loadTriangles(true); // load in the triangles from tri file
+    //     switch (event.key) {
+    //         case "a": // a
+    //             Eye[0] += delta;
+    //             break;
+    //         case "d": // d
+    //             break;
+    //
+    //         case "w": // w
+    //             break;
+    //         case "s": // s
+    //             break;
+    //
+    //         case "q": // q
+    //             break;
+    //         case "e": // e
+    //             break;
+    //
+    //         case "A": // a
+    //             break;
+    //         case "D": // d
+    //             break;
+    //
+    //         case "W": // w
+    //             break;
+    //         case "S": // s
+    //             break;
+    //
+    //         default:
+    //         // do nothing
+    //
+    //     }
+    // }, false);
 
-            case "w": // w
-                break;
-            case "s": // s
-                break;
-
-            case "q": // q
-                break;
-            case "e": // e
-                break;
-
-            case "A": // a
-                break;
-            case "D": // d
-                break;
-
-            case "W": // w
-                break;
-            case "S": // s
-                break;
-
-            default:
-            // do nothing
-
-        }
-
-        //
-        // setupShaders(); // setup the webGL shaders
-        // renderTriangles(); // draw the triangles using webGL
-    }, false);
-
-} // end main
+}
