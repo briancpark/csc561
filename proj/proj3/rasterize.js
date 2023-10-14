@@ -8,9 +8,6 @@ var gl = null;
 var selectionMatrices = [];
 
 var lightVertexArray = [];
-var ambientArray = [];
-var diffuseArray = [];
-var specularArray = [];
 
 var triBufferSize;
 var shaderProgram;
@@ -177,9 +174,9 @@ function initLocations() {
         modelViewMatrix: gl.getUniformLocation(shaderProgram, "uModelViewMatrix"),
         projectionMatrix: gl.getUniformLocation(shaderProgram, "uProjectionMatrix"),
         lightPosition: gl.getUniformLocation(shaderProgram, "uLightPosition"),
-    //     lightDiffuse: gl.getUniformLocation(shaderProgram, "uLightDiffuse"),
-    //     lightAmbient: gl.getUniformLocation(shaderProgram, "uLightAmbient"),
-    //     lightSpecular: gl.getUniformLocation(shaderProgram, "uLightSpecular"),
+        //     lightDiffuse: gl.getUniformLocation(shaderProgram, "uLightDiffuse"),
+        //     lightAmbient: gl.getUniformLocation(shaderProgram, "uLightAmbient"),
+        //     lightSpecular: gl.getUniformLocation(shaderProgram, "uLightSpecular"),
     };
 }
 
@@ -303,13 +300,11 @@ function draw() {
         gl.enableVertexAttribArray(locations.selectionMatrix + offsetIdx);
     }
 
-
     gl.bindBuffer(gl.ARRAY_BUFFER, buffers.eyeBuffer);
     gl.vertexAttribPointer(locations.vertexEye, 4, gl.FLOAT, false, 0, 0);
 
-    gl.bindBuffer(gl.ARRAY_BUFFER,buffers. diffuseBuffer);
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffers.diffuseBuffer);
     gl.vertexAttribPointer(locations.vertexDiffuse, 4, gl.FLOAT, false, 0, 0);
-
 
     gl.bindBuffer(gl.ARRAY_BUFFER, buffers.ambientBuffer);
     gl.vertexAttribPointer(locations.vertexAmbient, 4, gl.FLOAT, false, 0, 0);
@@ -399,36 +394,44 @@ function main() {
     */
 
     document.addEventListener('keydown', function (event) {
-        const delta = 0.5;
+        const delta = 0.1;
         // loadTriangles(true); // load in the triangles from tri file
         switch (event.key) {
-            case "a": // a
+            case "a":
                 Eye[0] += delta;
                 break;
-            case "d": // d
+            case "d":
                 Eye[0] -= delta;
                 break;
 
-            case "w": // w
+            case "w":
+                Eye[2] += delta;
+                break;
+            case "s":
+                Eye[2] -= delta;
+                break;
+
+            case "q":
                 Eye[1] += delta;
                 break;
-            case "s": // s
+            case "e":
                 Eye[1] -= delta;
                 break;
 
-            case "q": // q
+            case "A":
+                vec3.rotateY(at, at, Eye, glMatrix.toRadian(delta));
                 break;
-            case "e": // e
-                break;
-
-            case "A": // a
-                break;
-            case "D": // d
+            case "D":
+                vec3.rotateY(at, at, Eye, glMatrix.toRadian(-delta));
                 break;
 
-            case "W": // w
+            case "W":
+                vec3.rotateX(at, at, Eye, glMatrix.toRadian(delta));
+                vec3.rotateX(up, up, Eye, glMatrix.toRadian(delta));
                 break;
-            case "S": // s
+            case "S":
+                vec3.rotateX(at, at, Eye, glMatrix.toRadian(-delta));
+                vec3.rotateX(up, up, Eye, glMatrix.toRadian(-delta));
                 break;
 
             default:
