@@ -14,7 +14,7 @@ var locations;
 var buffers;
 var selectionBufferData = [];
 var selection = -1;
-
+var triangles;
 const up = [0, 1, 0];
 const at = [0, 0, 1];
 
@@ -194,6 +194,7 @@ function initBuffers() {
     triBufferSize = 0;
 
     var inputTriangles = getJSONFile(INPUT_TRIANGLES_URL, "triangles");
+    triangles = inputTriangles;
     if (inputTriangles != String.null) {
         var ambientArray = [];
         var diffuseArray = [];
@@ -379,6 +380,20 @@ function draw() {
 
 }
 
+function getCenter(triangleSet) {
+    const factor = triangleSet.triangles.length * 3;
+    const center = [0, 0, 0];
+    for (const triangle of triangleSet.triangles) {
+        for (const vertex of triangle) {
+            const [x, y, z] = triangleSet.vertices[vertex];
+            center[0] += x / factor;
+            center[1] += y / factor;
+            center[2] += z / factor;
+        }
+    }
+    return center;
+}
+
 function main() {
     setupWebGL();
     setupShaders();
@@ -403,10 +418,12 @@ function main() {
     */
 
     document.addEventListener('keydown', function (event) {
-        const delta = 0.5;
-        // loadTriangles(true); // load in the triangles from tri file
-        var scale;
+        const delta = 0.1;
         var v;
+        var center
+        if (selection != -1) {
+            center = getCenter(triangles[selection]);
+        }
         switch (event.key) {
             case "a":
                 Eye[0] += delta;
@@ -517,35 +534,52 @@ function main() {
 
             case "K":
                 if (selection != -1) {
-                    mat4.rotateY(selectionMatrices[selection], selectionMatrices[selection], glMatrix.toRadian(delta));
+                    mat4.translate(selectionMatrices[selection], selectionMatrices[selection], center);
+                    mat4.rotateY(selectionMatrices[selection], selectionMatrices[selection], delta);
+                    vec3.negate(center, center);
+                    mat4.translate(selectionMatrices[selection], selectionMatrices[selection], center);
                 }
                 break;
             case ":":
                 if (selection != -1) {
-                    mat4.rotateY(selectionMatrices[selection], selectionMatrices[selection], glMatrix.toRadian(-delta));
+                    mat4.translate(selectionMatrices[selection], selectionMatrices[selection], center);
+                    mat4.rotateY(selectionMatrices[selection], selectionMatrices[selection], -delta);
+                    vec3.negate(center, center);
+                    mat4.translate(selectionMatrices[selection], selectionMatrices[selection], center);
                 }
                 break;
 
             case "O":
                 if (selection != -1) {
-                    mat4.rotateX(selectionMatrices[selection], selectionMatrices[selection], glMatrix.toRadian(delta));
+                    mat4.translate(selectionMatrices[selection], selectionMatrices[selection], center);
+                    mat4.rotateX(selectionMatrices[selection], selectionMatrices[selection], delta);
+                    vec3.negate(center, center);
+                    mat4.translate(selectionMatrices[selection], selectionMatrices[selection], center);
                 }
                 break;
-
             case "L":
                 if (selection != -1) {
-                    mat4.rotateX(selectionMatrices[selection], selectionMatrices[selection], glMatrix.toRadian(-delta));
+                    mat4.translate(selectionMatrices[selection], selectionMatrices[selection], center);
+                    mat4.rotateX(selectionMatrices[selection], selectionMatrices[selection], -delta);
+                    vec3.negate(center, center);
+                    mat4.translate(selectionMatrices[selection], selectionMatrices[selection], center);
                 }
                 break;
 
             case "I":
                 if (selection != -1) {
-                    mat4.rotateZ(selectionMatrices[selection], selectionMatrices[selection], glMatrix.toRadian(delta));
+                    mat4.translate(selectionMatrices[selection], selectionMatrices[selection], center);
+                    mat4.rotateZ(selectionMatrices[selection], selectionMatrices[selection], delta);
+                    vec3.negate(center, center);
+                    mat4.translate(selectionMatrices[selection], selectionMatrices[selection], center);
                 }
                 break;
             case "P":
                 if (selection != -1) {
-                    mat4.rotateZ(selectionMatrices[selection], selectionMatrices[selection], glMatrix.toRadian(-delta));
+                    mat4.translate(selectionMatrices[selection], selectionMatrices[selection], center);
+                    mat4.rotateZ(selectionMatrices[selection], selectionMatrices[selection], -delta);
+                    vec3.negate(center, center);
+                    mat4.translate(selectionMatrices[selection], selectionMatrices[selection], center);
                 }
                 break;
 
