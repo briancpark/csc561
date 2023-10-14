@@ -7,13 +7,13 @@ var Eye = [0.5, 0.5, -0.5];
 var gl = null;
 var selectionMatrices = [];
 
-var lightVertexArray = [];
-
 var triBufferSize;
 var shaderProgram;
 
 var locations;
 var buffers;
+var selectionBufferData = [];
+var selection = -1;
 
 const up = [0, 1, 0];
 const at = [0, 0, 1];
@@ -52,8 +52,6 @@ function setupWebGL() {
             throw "unable to create gl context -- is your browser gl ready?";
         } else {
             gl.clearColor(0.0, 0.0, 0.0, 1.0);
-            gl.clearDepth(1.0);
-            gl.enable(gl.DEPTH_TEST);
         }
     } catch (e) {
         console.log(e);
@@ -112,7 +110,7 @@ function setupShaders() {
 
                 
         void main(void) {
-            gl_Position = vec4(uProjectionMatrix * uModelViewMatrix * aSelectionMatrix * vertexPosition);
+            gl_Position = uProjectionMatrix * uModelViewMatrix * aSelectionMatrix * vertexPosition;
             vec4 lightPos = uModelViewMatrix * uLightPosition;
             vL = normalize(lightPos - vertexPosition);
             vN = normalize(aNormal);
@@ -228,7 +226,9 @@ function initBuffers() {
 
         nArray = inputTriangles.map(triangle => triangle.vertices.map(() => triangle.material.n).flat()).flat();
 
-        inputTriangles.forEach(() => selectionMatrices.push(mat4.create()));
+        if (selectionMatrices.length == 0) {
+            inputTriangles.forEach(() => selectionMatrices.push(mat4.create()));
+        }
 
         triBufferSize = indexArray.length;
 
@@ -239,7 +239,7 @@ function initBuffers() {
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(eyeArray), gl.STATIC_DRAW);
 
         gl.bindBuffer(gl.ARRAY_BUFFER, buffers.selectionBuffer);
-        var selectionBufferData = [];
+        selectionBufferData = [];
         inputTriangles.forEach((data, index) => {
             data.vertices.forEach(() => {
                 selectionBufferData.push.apply(selectionBufferData, selectionMatrices[index]);
@@ -265,21 +265,6 @@ function initBuffers() {
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers.indexBuffer);
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indexArray), gl.STATIC_DRAW);
     }
-
-    var inputLights = getJSONFile(INPUT_LIGHTS_URL, "lights");
-    if (inputLights != String.null) {
-
-        inputLights.forEach(data => {
-            lightVertexArray.push(data.x, data.y, data.z);
-        });
-
-        inputLights.forEach(data => {
-            diffuseArray.push(...data.diffuse, 1.0);
-            ambientArray.push(...data.ambient, 1.0);
-            specularArray.push(...data.specular, 1.0);
-        });
-    }
-
 }
 
 function draw() {
@@ -325,6 +310,22 @@ function draw() {
     gl.enableVertexAttribArray(locations.vertexSpecular);
     gl.enableVertexAttribArray(locations.vertexNormal);
     gl.enableVertexAttribArray(locations.vertexN);
+
+
+    var lightVertexArray = [];
+   var inputLights = getJSONFile(INPUT_LIGHTS_URL, "lights");
+    if (inputLights != String.null) {
+
+        inputLights.forEach(data => {
+            lightVertexArray.push(data.x, data.y, data.z);
+        });
+
+        inputLights.forEach(data => {
+            // diffuseArray.push(...data.diffuse, 1.0);
+            // ambientArray.push(...data.ambient, 1.0);
+            // specularArray.push(...data.specular, 1.0);
+        });
+    }
 
 
     const fov = (90 * Math.PI) / 180;
@@ -391,11 +392,15 @@ function main() {
         q and e — translate view up (q) and down (e) along view Y
         A and D — rotate view left (A) and right (D) around view Y (yaw)
         W and S — rotate view forward (W) and backward (S) around view X (pitch)
+        left and right — select and highlight the next/previous triangle set (previous off)
+        space — deselect and turn off highlight
     */
 
     document.addEventListener('keydown', function (event) {
         const delta = 0.1;
         // loadTriangles(true); // load in the triangles from tri file
+        var scale;
+        var v;
         switch (event.key) {
             case "a":
                 Eye[0] += delta;
@@ -434,10 +439,40 @@ function main() {
                 vec3.rotateX(up, up, Eye, glMatrix.toRadian(-delta));
                 break;
 
+            case "ArrowLeft":
+                if (selection != -1) {
+                    v = [1 / 1.2, 1 / 1.2, 1];
+                    mat4.scale(selectionMatrices[selection], selectionMatrices[selection], v);
+                }
+                selection--;
+                if (selection < 0) {
+                    selection = selectionMatrices.length - 1;
+                }
+                v = [1.2, 1.2, 1];
+                mat4.scale(selectionMatrices[selection], selectionMatrices[selection], v);
+            case "ArrowRight":
+                if (selection != -1) {
+                    v = [1 / 1.2, 1 / 1.2, 1];
+                    mat4.scale(selectionMatrices[selection], selectionMatrices[selection], v);
+                }
+                selection++;
+                if (selection > selectionMatrices.length - 1) {
+                    selection = 0;
+                }
+                v = [1.2, 1.2, 1];
+                mat4.scale(selectionMatrices[selection], selectionMatrices[selection], v);
+                break;
+            case " ":
+                if (selection != -1) {
+                    v = [1 / 1.2, 1 / 1.2, 1];
+                    mat4.scale(selectionMatrices[selection], selectionMatrices[selection], v);
+                    selection = -1
+                }
+                break;
             default:
-            // do nothing
-
+                break;
         }
+        initBuffers();
         requestAnimationFrame(draw);
     }, false);
 
