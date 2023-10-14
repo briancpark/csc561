@@ -313,7 +313,7 @@ function draw() {
 
 
     var lightVertexArray = [];
-   var inputLights = getJSONFile(INPUT_LIGHTS_URL, "lights");
+    var inputLights = getJSONFile(INPUT_LIGHTS_URL, "lights");
     if (inputLights != String.null) {
 
         inputLights.forEach(data => {
@@ -394,10 +394,16 @@ function main() {
         W and S — rotate view forward (W) and backward (S) around view X (pitch)
         left and right — select and highlight the next/previous triangle set (previous off)
         space — deselect and turn off highlight
+        k and ; — translate selection left (k) and right (;) along view X
+        o and l — translate selection forward (o) and backward (l) along view Z
+        i and p — translate selection up (i) and down (p) along view Y
+        K and : — rotate selection left (K) and right (:) around view Y (yaw)
+        O and L — rotate selection forward (O) and backward (L) around view X (pitch)
+        I and P — rotate selection clockwise (I) and counterclockwise (P) around view Z (roll)
     */
 
     document.addEventListener('keydown', function (event) {
-        const delta = 0.1;
+        const delta = 0.5;
         // loadTriangles(true); // load in the triangles from tri file
         var scale;
         var v;
@@ -469,6 +475,80 @@ function main() {
                     selection = -1
                 }
                 break;
+
+            case "k":
+                if (selection != -1) {
+                    v = [delta, 0, 0];
+                    mat4.translate(selectionMatrices[selection], selectionMatrices[selection], v);
+                }
+                break;
+            case ";":
+                if (selection != -1) {
+                    v = [-delta, 0, 0];
+                    mat4.translate(selectionMatrices[selection], selectionMatrices[selection], v);
+                }
+                break;
+
+            case "o":
+                if (selection != -1) {
+                    v = [0, 0, delta];
+                    mat4.translate(selectionMatrices[selection], selectionMatrices[selection], v);
+                }
+                break;
+            case "l":
+                if (selection != -1) {
+                    v = [0, 0, -delta];
+                    mat4.translate(selectionMatrices[selection], selectionMatrices[selection], v);
+                }
+                break;
+
+            case "i":
+                if (selection != -1) {
+                    v = [0, delta, 0];
+                    mat4.translate(selectionMatrices[selection], selectionMatrices[selection], v);
+                }
+                break;
+            case "p":
+                if (selection != -1) {
+                    v = [0, -delta, 0];
+                    mat4.translate(selectionMatrices[selection], selectionMatrices[selection], v);
+                }
+                break;
+
+            case "K":
+                if (selection != -1) {
+                    mat4.rotateY(selectionMatrices[selection], selectionMatrices[selection], glMatrix.toRadian(delta));
+                }
+                break;
+            case ":":
+                if (selection != -1) {
+                    mat4.rotateY(selectionMatrices[selection], selectionMatrices[selection], glMatrix.toRadian(-delta));
+                }
+                break;
+
+            case "O":
+                if (selection != -1) {
+                    mat4.rotateX(selectionMatrices[selection], selectionMatrices[selection], glMatrix.toRadian(delta));
+                }
+                break;
+
+            case "L":
+                if (selection != -1) {
+                    mat4.rotateX(selectionMatrices[selection], selectionMatrices[selection], glMatrix.toRadian(-delta));
+                }
+                break;
+
+            case "I":
+                if (selection != -1) {
+                    mat4.rotateZ(selectionMatrices[selection], selectionMatrices[selection], glMatrix.toRadian(delta));
+                }
+                break;
+            case "P":
+                if (selection != -1) {
+                    mat4.rotateZ(selectionMatrices[selection], selectionMatrices[selection], glMatrix.toRadian(-delta));
+                }
+                break;
+
             default:
                 break;
         }
