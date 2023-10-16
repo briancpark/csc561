@@ -95,9 +95,9 @@ function setupShaders() {
         uniform mat4 uProjectionMatrix;
         uniform vec4 uLightPosition;
 
-        // uniform vec4 uLightAmbient;
-        // uniform vec4 uLightDiffuse;
-        // uniform vec4 uLightSpecular;
+        uniform vec4 uLightAmbient;
+        uniform vec4 uLightDiffuse;
+        uniform vec4 uLightSpecular;
         
         varying vec4 vL;
         varying vec4 vN;
@@ -116,9 +116,9 @@ function setupShaders() {
             vN = normalize(aNormal);
             vE = normalize(aEye - vertexPosition);
             
-            vSpecular = aSpecular;
-            vDiffuse = aDiffuse;
-            vAmbient = aAmbient;
+            vSpecular = aSpecular * uLightSpecular;
+            vDiffuse = aDiffuse * uLightDiffuse;
+            vAmbient = aAmbient * uLightAmbient;
             v_n = a_n;
         }
     `;
@@ -172,9 +172,9 @@ function initLocations() {
         modelViewMatrix: gl.getUniformLocation(shaderProgram, "uModelViewMatrix"),
         projectionMatrix: gl.getUniformLocation(shaderProgram, "uProjectionMatrix"),
         lightPosition: gl.getUniformLocation(shaderProgram, "uLightPosition"),
-        //     lightDiffuse: gl.getUniformLocation(shaderProgram, "uLightDiffuse"),
-        //     lightAmbient: gl.getUniformLocation(shaderProgram, "uLightAmbient"),
-        //     lightSpecular: gl.getUniformLocation(shaderProgram, "uLightSpecular"),
+        lightDiffuse: gl.getUniformLocation(shaderProgram, "uLightDiffuse"),
+        lightAmbient: gl.getUniformLocation(shaderProgram, "uLightAmbient"),
+        lightSpecular: gl.getUniformLocation(shaderProgram, "uLightSpecular"),
     };
 }
 
@@ -316,15 +316,17 @@ function draw() {
     var lightVertexArray = [];
     var inputLights = getJSONFile(INPUT_LIGHTS_URL, "lights");
     if (inputLights != String.null) {
-
+        var ambientArray = [];
+        var diffuseArray = [];
+        var specularArray = [];
         inputLights.forEach(data => {
             lightVertexArray.push(data.x, data.y, data.z);
         });
 
         inputLights.forEach(data => {
-            // diffuseArray.push(...data.diffuse, 1.0);
-            // ambientArray.push(...data.ambient, 1.0);
-            // specularArray.push(...data.specular, 1.0);
+            diffuseArray.push(...data.diffuse);
+            ambientArray.push(...data.ambient);
+            specularArray.push(...data.specular);
         });
     }
 
@@ -357,35 +359,35 @@ function draw() {
         lightVertexArray.concat([1.0]),
     );
 
-    // var lightDiffuseAttrib = gl.getUniformLocation(shaderProgram, "uLightDiffuse");
-    // gl.uniform4fv(
-    //     lightDiffuseAttrib,
-    //     diffuseArray.concat([1.0]),
-    // )
-    //
-    // var lightAmbientAttrib = gl.getUniformLocation(shaderProgram, "uLightAmbient");
-    // gl.uniform4fv(
-    //     lightAmbientAttrib,
-    //     ambientArray.concat([1.0]),
-    // )
-    //
-    // var lightSpecularAttrib = gl.getUniformLocation(shaderProgram, "uLightSpecular");
-    // gl.uniform4fv(
-    //     lightSpecularAttrib,
-    //     specularArray.concat([1.0]),
-    // )
+    var lightDiffuseAttrib = gl.getUniformLocation(shaderProgram, "uLightDiffuse");
+    gl.uniform4fv(
+        lightDiffuseAttrib,
+        diffuseArray.concat([1.0]),
+    )
+
+    var lightAmbientAttrib = gl.getUniformLocation(shaderProgram, "uLightAmbient");
+    gl.uniform4fv(
+        lightAmbientAttrib,
+        ambientArray.concat([1.0]),
+    )
+
+    var lightSpecularAttrib = gl.getUniformLocation(shaderProgram, "uLightSpecular");
+    gl.uniform4fv(
+        lightSpecularAttrib,
+        specularArray.concat([1.0]),
+    )
 
     gl.drawElements(gl.TRIANGLES, triBufferSize, gl.UNSIGNED_SHORT, 0);
 
 
 }
 
-function getCenter(triangleSet) {
-    const factor = triangleSet.triangles.length * 3;
+function getTriangleCenter(triangles) {
+    const factor = triangles.triangles.length * 3;
     const center = [0, 0, 0];
-    for (const triangle of triangleSet.triangles) {
+    for (const triangle of triangles.triangles) {
         for (const vertex of triangle) {
-            const [x, y, z] = triangleSet.vertices[vertex];
+            const [x, y, z] = triangles.vertices[vertex];
             center[0] += x / factor;
             center[1] += y / factor;
             center[2] += z / factor;
@@ -422,7 +424,7 @@ function main() {
         var v;
         var center
         if (selection != -1) {
-            center = getCenter(triangles[selection]);
+            center = getTriangleCenter(triangles[selection]);
         }
         switch (event.key) {
             case "a":
