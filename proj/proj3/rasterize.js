@@ -72,18 +72,19 @@ function setupShaders() {
         varying float v_n;
         
         void main(void) {
-            vec4 diffuse = max(dot(vL, vN), 0.0) * vDiffuse;
-            vec4 H = normalize(vL + vE);
-            vec4 specular = pow(max(dot(vN, H), 0.0), v_n) * vSpecular;   
-            vec4 fColor = vAmbient + diffuse + vSpecular;
-            gl_FragColor = fColor;
+            vec4 vH = normalize(vL + vE);
+            float diffuseScale = max(0.0, dot(vN, vL));
+            vec4 diffuse = diffuseScale * vDiffuse;
+            float specularScale = pow(max(0.0, dot(vN, vH)), v_n);
+            vec4 specular = specularScale * vSpecular;   
+            gl_FragColor = vAmbient + diffuse + specular;
         }
     `;
 
     var vShaderCode = `
         attribute vec4 vertexPosition;
         attribute vec4 aEye;
-        attribute mat4 aSelectionMatrix;
+        attribute mat4 aSelection;
         attribute vec4 aDiffuse;
         attribute vec4 aAmbient;
         attribute vec4 aSpecular;
@@ -91,8 +92,8 @@ function setupShaders() {
         attribute float a_n;
         
         
-        uniform mat4 uModelViewMatrix;
-        uniform mat4 uProjectionMatrix;
+        uniform mat4 uModelView;
+        uniform mat4 uProjection;
         uniform vec4 uLightPosition;
 
         uniform vec4 uLightAmbient;
@@ -110,8 +111,8 @@ function setupShaders() {
 
                 
         void main(void) {
-            gl_Position = uProjectionMatrix * uModelViewMatrix * aSelectionMatrix * vertexPosition;
-            vec4 lightPos = uModelViewMatrix * uLightPosition;
+            gl_Position = uProjection * uModelView * aSelection * vertexPosition;
+            vec4 lightPos = uModelView * uLightPosition;
             vL = normalize(lightPos - vertexPosition);
             vN = normalize(aNormal);
             vE = normalize(aEye - vertexPosition);
@@ -161,7 +162,7 @@ function setupShaders() {
 function initLocations() {
     locations = {
         vertexPosition: gl.getAttribLocation(shaderProgram, "vertexPosition"),
-        selectionMatrix: gl.getAttribLocation(shaderProgram, "aSelectionMatrix"),
+        selectionMatrix: gl.getAttribLocation(shaderProgram, "aSelection"),
         vertexEye: gl.getAttribLocation(shaderProgram, "aEye"),
         vertexDiffuse: gl.getAttribLocation(shaderProgram, "aDiffuse"),
         vertexAmbient: gl.getAttribLocation(shaderProgram, "aAmbient"),
@@ -169,8 +170,8 @@ function initLocations() {
         vertexNormal: gl.getAttribLocation(shaderProgram, "aNormal"),
         vertexN: gl.getAttribLocation(shaderProgram, "a_n"),
 
-        modelViewMatrix: gl.getUniformLocation(shaderProgram, "uModelViewMatrix"),
-        projectionMatrix: gl.getUniformLocation(shaderProgram, "uProjectionMatrix"),
+        uModelViewMatrix: gl.getUniformLocation(shaderProgram, "uModelView"),
+        projectionMatrix: gl.getUniformLocation(shaderProgram, "uProjection"),
         lightPosition: gl.getUniformLocation(shaderProgram, "uLightPosition"),
         lightDiffuse: gl.getUniformLocation(shaderProgram, "uLightDiffuse"),
         lightAmbient: gl.getUniformLocation(shaderProgram, "uLightAmbient"),
@@ -338,8 +339,8 @@ function draw() {
     const projectionMatrix = mat4.create();
     mat4.perspective(projectionMatrix, fov, aspect, near, far);
 
-    const modelViewMatrix = mat4.create();
-    mat4.lookAt(modelViewMatrix, Eye, center, up);
+    const uModelViewMatrix = mat4.create();
+    mat4.lookAt(uModelViewMatrix, Eye, center, up);
 
     gl.useProgram(shaderProgram);
 
@@ -349,9 +350,9 @@ function draw() {
         projectionMatrix);
 
     gl.uniformMatrix4fv(
-        locations.modelViewMatrix,
+        locations.uModelViewMatrix,
         false,
-        modelViewMatrix);
+        uModelViewMatrix);
 
 
     gl.uniform4fv(
