@@ -1,7 +1,6 @@
-var INPUT_TRIANGLES_URL = "triangles.json";
-const INPUT_ELLIPSOIDS_URL = "ellipsoids.json";
-const INPUT_LIGHTS_URL = "lights.json";
-const INPUT_SPHERES_URL = "spheres.json";
+var INPUT_TRIANGLES_URL = "attributes/triangles.json";
+const INPUT_ELLIPSOIDS_URL = "attributes/ellipsoids.json";
+const INPUT_LIGHTS_URL = "attributes/lights.json";
 var Eye = [0.5, 0.5, -0.5];
 
 var gl = null;
@@ -591,7 +590,7 @@ function main() {
 
             case "!":
                 // Make it my own
-                INPUT_TRIANGLES_URL = "triangles2.json";
+                INPUT_TRIANGLES_URL = "attributes/triangles2.json";
                 gl = canvas.getContext("webgl");
 
                 for (var key in buffers) {
