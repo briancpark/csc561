@@ -1,4 +1,4 @@
-const INPUT_TRIANGLES_URL = "triangles.json";
+var INPUT_TRIANGLES_URL = "triangles.json";
 const INPUT_ELLIPSOIDS_URL = "ellipsoids.json";
 const INPUT_LIGHTS_URL = "lights.json";
 const INPUT_SPHERES_URL = "spheres.json";
@@ -45,7 +45,7 @@ function getJSONFile(url, descr) {
 
 function setupWebGL() {
     var canvas = document.getElementById("canvas");
-    gl = canvas.getContext("webgl2");
+    gl = canvas.getContext("webgl");
 
     try {
         if (gl == null) {
@@ -180,17 +180,20 @@ function initLocations() {
 }
 
 function initBuffers() {
-    buffers = {
-        vertexBuffer: gl.createBuffer(),
-        selectionBuffer: gl.createBuffer(),
-        eyeBuffer: gl.createBuffer(),
-        diffuseBuffer: gl.createBuffer(),
-        ambientBuffer: gl.createBuffer(),
-        specularBuffer: gl.createBuffer(),
-        normalBuffer: gl.createBuffer(),
-        nBuffer: gl.createBuffer(),
-        indexBuffer: gl.createBuffer(),
-    };
+    // If buffers don't exist, create them
+    if (buffers == null) {
+        buffers = {
+            vertexBuffer: gl.createBuffer(),
+            selectionBuffer: gl.createBuffer(),
+            eyeBuffer: gl.createBuffer(),
+            diffuseBuffer: gl.createBuffer(),
+            ambientBuffer: gl.createBuffer(),
+            specularBuffer: gl.createBuffer(),
+            normalBuffer: gl.createBuffer(),
+            nBuffer: gl.createBuffer(),
+            indexBuffer: gl.createBuffer(),
+        };
+    }
 
     triBufferSize = 0;
 
@@ -585,6 +588,33 @@ function main() {
                     mat4.translate(selectionMatrices[selection], selectionMatrices[selection], center);
                 }
                 break;
+
+            case "!":
+                // Make it my own
+                INPUT_TRIANGLES_URL = "triangles2.json";
+                gl = canvas.getContext("webgl");
+
+                for (var key in buffers) {
+                    gl.deleteBuffer(buffers[key]);
+                }
+
+                // Reset the context
+                gl = null;
+                selectionMatrices = [];
+                triBufferSize = 0;
+                shaderProgram = null;
+                locations = null;
+                buffers = null;
+                selectionBufferData = [];
+                selection = -1;
+                triangles = null;
+
+                setupWebGL();
+                setupShaders();
+                initLocations();
+                initBuffers();
+                requestAnimationFrame(draw);
+
 
             default:
                 break;
