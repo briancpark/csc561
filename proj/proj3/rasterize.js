@@ -1,7 +1,6 @@
-const INPUT_TRIANGLES_URL = "triangles.json";
-const INPUT_ELLIPSOIDS_URL = "ellipsoids.json";
-const INPUT_LIGHTS_URL = "lights.json";
-const INPUT_SPHERES_URL = "spheres.json";
+var INPUT_TRIANGLES_URL = "attributes/triangles.json";
+const INPUT_ELLIPSOIDS_URL = "attributes/ellipsoids.json";
+const INPUT_LIGHTS_URL = "attributes/lights.json";
 var Eye = [0.5, 0.5, -0.5];
 
 var gl = null;
@@ -18,6 +17,7 @@ var triangles;
 const up = [0, 1, 0];
 const at = [0, 0, 1];
 
+var mystery = false;
 
 function getJSONFile(url, descr) {
     try {
@@ -45,7 +45,7 @@ function getJSONFile(url, descr) {
 
 function setupWebGL() {
     var canvas = document.getElementById("canvas");
-    gl = canvas.getContext("webgl2");
+    gl = canvas.getContext("webgl");
 
     try {
         if (gl == null) {
@@ -72,18 +72,19 @@ function setupShaders() {
         varying float v_n;
         
         void main(void) {
-            vec4 diffuse = max(dot(vL, vN), 0.0) * vDiffuse;
-            vec4 H = normalize(vL + vE);
-            vec4 specular = pow(max(dot(vN, H), 0.0), v_n) * vSpecular;   
-            vec4 fColor = vAmbient + diffuse + vSpecular;
-            gl_FragColor = fColor;
+            vec4 vH = normalize(vL + vE);
+            float diffuseScale = max(0.0, dot(vN, vL));
+            vec4 diffuse = diffuseScale * vDiffuse;
+            float specularScale = pow(max(0.0, dot(vN, vH)), v_n);
+            vec4 specular = specularScale * vSpecular;   
+            gl_FragColor = vAmbient + diffuse + specular;
         }
     `;
 
     var vShaderCode = `
         attribute vec4 vertexPosition;
         attribute vec4 aEye;
-        attribute mat4 aSelectionMatrix;
+        attribute mat4 aSelection;
         attribute vec4 aDiffuse;
         attribute vec4 aAmbient;
         attribute vec4 aSpecular;
@@ -91,13 +92,13 @@ function setupShaders() {
         attribute float a_n;
         
         
-        uniform mat4 uModelViewMatrix;
-        uniform mat4 uProjectionMatrix;
+        uniform mat4 uModelView;
+        uniform mat4 uProjection;
         uniform vec4 uLightPosition;
 
-        // uniform vec4 uLightAmbient;
-        // uniform vec4 uLightDiffuse;
-        // uniform vec4 uLightSpecular;
+        uniform vec4 uLightAmbient;
+        uniform vec4 uLightDiffuse;
+        uniform vec4 uLightSpecular;
         
         varying vec4 vL;
         varying vec4 vN;
@@ -110,15 +111,15 @@ function setupShaders() {
 
                 
         void main(void) {
-            gl_Position = uProjectionMatrix * uModelViewMatrix * aSelectionMatrix * vertexPosition;
-            vec4 lightPos = uModelViewMatrix * uLightPosition;
+            gl_Position = uProjection * uModelView * aSelection * vertexPosition;
+            vec4 lightPos = uModelView * uLightPosition;
             vL = normalize(lightPos - vertexPosition);
             vN = normalize(aNormal);
             vE = normalize(aEye - vertexPosition);
             
-            vSpecular = aSpecular;
-            vDiffuse = aDiffuse;
-            vAmbient = aAmbient;
+            vSpecular = aSpecular * uLightSpecular;
+            vDiffuse = aDiffuse * uLightDiffuse;
+            vAmbient = aAmbient * uLightAmbient;
             v_n = a_n;
         }
     `;
@@ -161,7 +162,7 @@ function setupShaders() {
 function initLocations() {
     locations = {
         vertexPosition: gl.getAttribLocation(shaderProgram, "vertexPosition"),
-        selectionMatrix: gl.getAttribLocation(shaderProgram, "aSelectionMatrix"),
+        selectionMatrix: gl.getAttribLocation(shaderProgram, "aSelection"),
         vertexEye: gl.getAttribLocation(shaderProgram, "aEye"),
         vertexDiffuse: gl.getAttribLocation(shaderProgram, "aDiffuse"),
         vertexAmbient: gl.getAttribLocation(shaderProgram, "aAmbient"),
@@ -169,27 +170,30 @@ function initLocations() {
         vertexNormal: gl.getAttribLocation(shaderProgram, "aNormal"),
         vertexN: gl.getAttribLocation(shaderProgram, "a_n"),
 
-        modelViewMatrix: gl.getUniformLocation(shaderProgram, "uModelViewMatrix"),
-        projectionMatrix: gl.getUniformLocation(shaderProgram, "uProjectionMatrix"),
+        uModelViewMatrix: gl.getUniformLocation(shaderProgram, "uModelView"),
+        projectionMatrix: gl.getUniformLocation(shaderProgram, "uProjection"),
         lightPosition: gl.getUniformLocation(shaderProgram, "uLightPosition"),
-        //     lightDiffuse: gl.getUniformLocation(shaderProgram, "uLightDiffuse"),
-        //     lightAmbient: gl.getUniformLocation(shaderProgram, "uLightAmbient"),
-        //     lightSpecular: gl.getUniformLocation(shaderProgram, "uLightSpecular"),
+        lightDiffuse: gl.getUniformLocation(shaderProgram, "uLightDiffuse"),
+        lightAmbient: gl.getUniformLocation(shaderProgram, "uLightAmbient"),
+        lightSpecular: gl.getUniformLocation(shaderProgram, "uLightSpecular"),
     };
 }
 
 function initBuffers() {
-    buffers = {
-        vertexBuffer: gl.createBuffer(),
-        selectionBuffer: gl.createBuffer(),
-        eyeBuffer: gl.createBuffer(),
-        diffuseBuffer: gl.createBuffer(),
-        ambientBuffer: gl.createBuffer(),
-        specularBuffer: gl.createBuffer(),
-        normalBuffer: gl.createBuffer(),
-        nBuffer: gl.createBuffer(),
-        indexBuffer: gl.createBuffer(),
-    };
+    // If buffers don't exist, create them
+    if (buffers == null) {
+        buffers = {
+            vertexBuffer: gl.createBuffer(),
+            selectionBuffer: gl.createBuffer(),
+            eyeBuffer: gl.createBuffer(),
+            diffuseBuffer: gl.createBuffer(),
+            ambientBuffer: gl.createBuffer(),
+            specularBuffer: gl.createBuffer(),
+            normalBuffer: gl.createBuffer(),
+            nBuffer: gl.createBuffer(),
+            indexBuffer: gl.createBuffer(),
+        };
+    }
 
     triBufferSize = 0;
 
@@ -316,15 +320,17 @@ function draw() {
     var lightVertexArray = [];
     var inputLights = getJSONFile(INPUT_LIGHTS_URL, "lights");
     if (inputLights != String.null) {
-
+        var ambientArray = [];
+        var diffuseArray = [];
+        var specularArray = [];
         inputLights.forEach(data => {
             lightVertexArray.push(data.x, data.y, data.z);
         });
 
         inputLights.forEach(data => {
-            // diffuseArray.push(...data.diffuse, 1.0);
-            // ambientArray.push(...data.ambient, 1.0);
-            // specularArray.push(...data.specular, 1.0);
+            diffuseArray.push(...data.diffuse);
+            ambientArray.push(...data.ambient);
+            specularArray.push(...data.specular);
         });
     }
 
@@ -336,8 +342,8 @@ function draw() {
     const projectionMatrix = mat4.create();
     mat4.perspective(projectionMatrix, fov, aspect, near, far);
 
-    const modelViewMatrix = mat4.create();
-    mat4.lookAt(modelViewMatrix, Eye, center, up);
+    const uModelViewMatrix = mat4.create();
+    mat4.lookAt(uModelViewMatrix, Eye, center, up);
 
     gl.useProgram(shaderProgram);
 
@@ -347,9 +353,9 @@ function draw() {
         projectionMatrix);
 
     gl.uniformMatrix4fv(
-        locations.modelViewMatrix,
+        locations.uModelViewMatrix,
         false,
-        modelViewMatrix);
+        uModelViewMatrix);
 
 
     gl.uniform4fv(
@@ -357,35 +363,34 @@ function draw() {
         lightVertexArray.concat([1.0]),
     );
 
-    // var lightDiffuseAttrib = gl.getUniformLocation(shaderProgram, "uLightDiffuse");
-    // gl.uniform4fv(
-    //     lightDiffuseAttrib,
-    //     diffuseArray.concat([1.0]),
-    // )
-    //
-    // var lightAmbientAttrib = gl.getUniformLocation(shaderProgram, "uLightAmbient");
-    // gl.uniform4fv(
-    //     lightAmbientAttrib,
-    //     ambientArray.concat([1.0]),
-    // )
-    //
-    // var lightSpecularAttrib = gl.getUniformLocation(shaderProgram, "uLightSpecular");
-    // gl.uniform4fv(
-    //     lightSpecularAttrib,
-    //     specularArray.concat([1.0]),
-    // )
+    var lightDiffuseAttrib = gl.getUniformLocation(shaderProgram, "uLightDiffuse");
+    gl.uniform4fv(
+        lightDiffuseAttrib,
+        diffuseArray.concat([1.0]),
+    )
 
+    var lightAmbientAttrib = gl.getUniformLocation(shaderProgram, "uLightAmbient");
+    gl.uniform4fv(
+        lightAmbientAttrib,
+        ambientArray.concat([1.0]),
+    )
+
+    var lightSpecularAttrib = gl.getUniformLocation(shaderProgram, "uLightSpecular");
+    gl.uniform4fv(
+        lightSpecularAttrib,
+        specularArray.concat([1.0]),
+    )
     gl.drawElements(gl.TRIANGLES, triBufferSize, gl.UNSIGNED_SHORT, 0);
 
 
 }
 
-function getCenter(triangleSet) {
-    const factor = triangleSet.triangles.length * 3;
+function getTriangleCenter(triangles) {
+    const factor = triangles.triangles.length * 3;
     const center = [0, 0, 0];
-    for (const triangle of triangleSet.triangles) {
+    for (const triangle of triangles.triangles) {
         for (const vertex of triangle) {
-            const [x, y, z] = triangleSet.vertices[vertex];
+            const [x, y, z] = triangles.vertices[vertex];
             center[0] += x / factor;
             center[1] += y / factor;
             center[2] += z / factor;
@@ -419,10 +424,10 @@ function main() {
 
     document.addEventListener('keydown', function (event) {
         const delta = 0.1;
-        var v;
-        var center
+        var v, center;
+
         if (selection != -1) {
-            center = getCenter(triangles[selection]);
+            center = getTriangleCenter(triangles[selection]);
         }
         switch (event.key) {
             case "a":
@@ -471,8 +476,10 @@ function main() {
                 if (selection < 0) {
                     selection = selectionMatrices.length - 1;
                 }
+                console.log(selection);
                 v = [1.2, 1.2, 1];
                 mat4.scale(selectionMatrices[selection], selectionMatrices[selection], v);
+                break;
             case "ArrowRight":
                 if (selection != -1) {
                     v = [1 / 1.2, 1 / 1.2, 1];
@@ -582,6 +589,44 @@ function main() {
                     mat4.translate(selectionMatrices[selection], selectionMatrices[selection], center);
                 }
                 break;
+
+            case "!":
+                if (!mystery) {
+                    // Make it my own
+                    INPUT_TRIANGLES_URL = "attributes/triangles3.json";
+                    gl = canvas.getContext("webgl");
+                    Eye = [-0.5, -0.5, -1.0];
+                    for (var key in buffers) {
+                        gl.deleteBuffer(buffers[key]);
+                    }
+
+                    // Reset the context
+                    gl = null;
+                    selectionMatrices = [];
+                    triBufferSize = 0;
+                    shaderProgram = null;
+                    locations = null;
+                    buffers = null;
+                    selectionBufferData = [];
+                    selection = -1;
+                    triangles = null;
+                    mystery = true;
+
+                    setupWebGL();
+                    setupShaders();
+                    initLocations();
+                    initBuffers();
+                    requestAnimationFrame(draw);
+                } else {
+                    for (var s = 0; s < selectionMatrices.length; s++) {
+                        center = getTriangleCenter(triangles[s]);
+                        mat4.translate(selectionMatrices[s], selectionMatrices[s], center);
+                        mat4.rotateY(selectionMatrices[s], selectionMatrices[s], -delta);
+                        vec3.negate(center, center);
+                        mat4.translate(selectionMatrices[s], selectionMatrices[s], center);
+                }
+            }
+
 
             default:
                 break;
