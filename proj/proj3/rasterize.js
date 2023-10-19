@@ -17,6 +17,7 @@ var triangles;
 const up = [0, 1, 0];
 const at = [0, 0, 1];
 
+var mystery = false;
 
 function getJSONFile(url, descr) {
     try {
@@ -379,7 +380,6 @@ function draw() {
         lightSpecularAttrib,
         specularArray.concat([1.0]),
     )
-
     gl.drawElements(gl.TRIANGLES, triBufferSize, gl.UNSIGNED_SHORT, 0);
 
 
@@ -424,8 +424,8 @@ function main() {
 
     document.addEventListener('keydown', function (event) {
         const delta = 0.1;
-        var v;
-        var center
+        var v, center;
+
         if (selection != -1) {
             center = getTriangleCenter(triangles[selection]);
         }
@@ -476,8 +476,10 @@ function main() {
                 if (selection < 0) {
                     selection = selectionMatrices.length - 1;
                 }
+                console.log(selection);
                 v = [1.2, 1.2, 1];
                 mat4.scale(selectionMatrices[selection], selectionMatrices[selection], v);
+                break;
             case "ArrowRight":
                 if (selection != -1) {
                     v = [1 / 1.2, 1 / 1.2, 1];
@@ -589,30 +591,41 @@ function main() {
                 break;
 
             case "!":
-                // Make it my own
-                INPUT_TRIANGLES_URL = "attributes/triangles2.json";
-                gl = canvas.getContext("webgl");
+                if (!mystery) {
+                    // Make it my own
+                    INPUT_TRIANGLES_URL = "attributes/triangles3.json";
+                    gl = canvas.getContext("webgl");
+                    Eye = [-0.5, -0.5, -1.0];
+                    for (var key in buffers) {
+                        gl.deleteBuffer(buffers[key]);
+                    }
 
-                for (var key in buffers) {
-                    gl.deleteBuffer(buffers[key]);
+                    // Reset the context
+                    gl = null;
+                    selectionMatrices = [];
+                    triBufferSize = 0;
+                    shaderProgram = null;
+                    locations = null;
+                    buffers = null;
+                    selectionBufferData = [];
+                    selection = -1;
+                    triangles = null;
+                    mystery = true;
+
+                    setupWebGL();
+                    setupShaders();
+                    initLocations();
+                    initBuffers();
+                    requestAnimationFrame(draw);
+                } else {
+                    for (var s = 0; s < selectionMatrices.length; s++) {
+                        center = getTriangleCenter(triangles[s]);
+                        mat4.translate(selectionMatrices[s], selectionMatrices[s], center);
+                        mat4.rotateY(selectionMatrices[s], selectionMatrices[s], -delta);
+                        vec3.negate(center, center);
+                        mat4.translate(selectionMatrices[s], selectionMatrices[s], center);
                 }
-
-                // Reset the context
-                gl = null;
-                selectionMatrices = [];
-                triBufferSize = 0;
-                shaderProgram = null;
-                locations = null;
-                buffers = null;
-                selectionBufferData = [];
-                selection = -1;
-                triangles = null;
-
-                setupWebGL();
-                setupShaders();
-                initLocations();
-                initBuffers();
-                requestAnimationFrame(draw);
+            }
 
 
             default:
