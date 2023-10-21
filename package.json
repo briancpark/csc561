@@ -1,0 +1,23 @@
+{
+  "name": "csc561",
+  "version": "1.0.0",
+  "description": "CSC 561: Principles of Computer Graphics",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/briancpark/csc561.git"
+  },
+  "author": "Brian Park",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/briancpark/csc561/issues"
+  },
+  "homepage": "https://github.com/briancpark/csc561#readme",
+  "devDependencies": {
+    "eslint": "^8.52.0",
+    "eslint-config-google": "^0.14.0"
+  }
+}

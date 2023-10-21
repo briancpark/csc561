@@ -1,41 +1,51 @@
-var INPUT_TRIANGLES_URL = "attributes/triangles.json";
-const INPUT_ELLIPSOIDS_URL = "attributes/ellipsoids.json";
-const INPUT_LIGHTS_URL = "attributes/lights.json";
-var Eye = [0.5, 0.5, -0.5];
+/* eslint-disable require-jsdoc, no-throw-literal, prefer-spread, max-len, no-unused-vars, guard-for-in */
 
-var gl = null;
-var selectionMatrices = [];
+let INPUT_TRIANGLES_URL = 'attributes/triangles.json';
+// const INPUT_ELLIPSOIDS_URL = 'attributes/ellipsoids.json';
+const INPUT_LIGHTS_URL = 'attributes/lights.json';
+let Eye = [0.5, 0.5, -0.5];
 
-var triBufferSize;
-var shaderProgram;
+let gl = null;
+let selectionMatrices = [];
 
-var locations;
-var buffers;
-var selectionBufferData = [];
-var selection = -1;
-var triangles;
+let triBufferSize;
+let shaderProgram;
+
+let locations;
+let buffers;
+let selectionBufferData = [];
+let selection = -1;
+let triangles;
 const up = [0, 1, 0];
 const at = [0, 0, 1];
 
-var mystery = false;
+let mystery = false;
+
+function loadShaderFile(url) {
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', url, false); // `false` makes the request synchronous
+    xhr.send();
+
+    if (xhr.status !== 200) {
+        throw new Error(`Failed to load shader file: ${url}`);
+    }
+
+    return xhr.responseText;
+}
 
 function getJSONFile(url, descr) {
     try {
-        if ((typeof (url) !== "string") || (typeof (descr) !== "string"))
-            throw "getJSONFile: parameter not a string";
+        if ((typeof (url) !== 'string') || (typeof (descr) !== 'string')) throw 'getJSONFile: parameter not a string';
         else {
-            var httpReq = new XMLHttpRequest();
-            httpReq.open("GET", url, false);
+            const httpReq = new XMLHttpRequest();
+            httpReq.open('GET', url, false);
             httpReq.send(null);
-            var startTime = Date.now();
+            const startTime = Date.now();
             while ((httpReq.status !== 200) && (httpReq.readyState !== XMLHttpRequest.DONE)) {
-                if ((Date.now() - startTime) > 3000)
-                    break;
+                if ((Date.now() - startTime) > 3000) break;
             }
-            if ((httpReq.status !== 200) || (httpReq.readyState !== XMLHttpRequest.DONE))
-                throw "Unable to open " + descr + " file!";
-            else
-                return JSON.parse(httpReq.response);
+            if ((httpReq.status !== 200) || (httpReq.readyState !== XMLHttpRequest.DONE)) throw `Unable to open ${descr} file!`;
+            else return JSON.parse(httpReq.response);
         }
     } catch (e) {
         console.log(e);
@@ -44,12 +54,12 @@ function getJSONFile(url, descr) {
 }
 
 function setupWebGL() {
-    var canvas = document.getElementById("canvas");
-    gl = canvas.getContext("webgl");
+    const canvas = document.getElementById('canvas');
+    gl = canvas.getContext('webgl');
 
     try {
         if (gl == null) {
-            throw "unable to create gl context -- is your browser gl ready?";
+            throw 'unable to create gl context -- is your browser gl ready?';
         } else {
             gl.clearColor(0.0, 0.0, 0.0, 1.0);
         }
@@ -59,85 +69,23 @@ function setupWebGL() {
 }
 
 function setupShaders() {
-    var fShaderCode = `
-        precision highp float;
-       
-        varying vec4 vL;
-        varying vec4 vN;
-        varying vec4 vE;
-        varying vec4 vAmbient;
-        varying vec4 vDiffuse;
-        varying vec4 vSpecular;
-        varying vec4 vNormal;
-        varying float v_n;
-        
-        void main(void) {
-            vec4 vH = normalize(vL + vE);
-            float diffuseScale = max(0.0, dot(vN, vL));
-            vec4 diffuse = diffuseScale * vDiffuse;
-            float specularScale = pow(max(0.0, dot(vN, vH)), v_n);
-            vec4 specular = specularScale * vSpecular;   
-            gl_FragColor = vAmbient + diffuse + specular;
-        }
-    `;
-
-    var vShaderCode = `
-        attribute vec4 vertexPosition;
-        attribute vec4 aEye;
-        attribute mat4 aSelection;
-        attribute vec4 aDiffuse;
-        attribute vec4 aAmbient;
-        attribute vec4 aSpecular;
-        attribute vec4 aNormal;
-        attribute float a_n;
-        
-        
-        uniform mat4 uModelView;
-        uniform mat4 uProjection;
-        uniform vec4 uLightPosition;
-
-        uniform vec4 uLightAmbient;
-        uniform vec4 uLightDiffuse;
-        uniform vec4 uLightSpecular;
-        
-        varying vec4 vL;
-        varying vec4 vN;
-        varying vec4 vE;
-        varying vec4 vAmbient;
-        varying vec4 vDiffuse;
-        varying vec4 vSpecular;
-        varying vec4 vNormal;
-        varying float v_n;
-
-                
-        void main(void) {
-            gl_Position = uProjection * uModelView * aSelection * vertexPosition;
-            vec4 lightPos = uModelView * uLightPosition;
-            vL = normalize(lightPos - vertexPosition);
-            vN = normalize(aNormal);
-            vE = normalize(aEye - vertexPosition);
-            
-            vSpecular = aSpecular * uLightSpecular;
-            vDiffuse = aDiffuse * uLightDiffuse;
-            vAmbient = aAmbient * uLightAmbient;
-            v_n = a_n;
-        }
-    `;
+    const fShaderCode = loadShaderFile('./fShader.glsl');
+    const vShaderCode = loadShaderFile('./vShader.glsl');
 
     try {
-        var fShader = gl.createShader(gl.FRAGMENT_SHADER);
+        const fShader = gl.createShader(gl.FRAGMENT_SHADER);
         gl.shaderSource(fShader, fShaderCode);
         gl.compileShader(fShader);
 
-        var vShader = gl.createShader(gl.VERTEX_SHADER);
+        const vShader = gl.createShader(gl.VERTEX_SHADER);
         gl.shaderSource(vShader, vShaderCode);
         gl.compileShader(vShader);
 
         if (!gl.getShaderParameter(fShader, gl.COMPILE_STATUS)) {
-            throw "error during fragment shader compile: " + gl.getShaderInfoLog(fShader);
+            throw `error during fragment shader compile: ${gl.getShaderInfoLog(fShader)}`;
             gl.deleteShader(fShader);
         } else if (!gl.getShaderParameter(vShader, gl.COMPILE_STATUS)) {
-            throw "error during vertex shader compile: " + gl.getShaderInfoLog(vShader);
+            throw `error during vertex shader compile: ${gl.getShaderInfoLog(vShader)}`;
             gl.deleteShader(vShader);
         } else {
             shaderProgram = gl.createProgram();
@@ -146,36 +94,31 @@ function setupShaders() {
             gl.linkProgram(shaderProgram);
 
             if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-                throw "error during shader program linking: " + gl.getProgramInfoLog(shaderProgram);
+                throw `error during shader program linking: ${gl.getProgramInfoLog(shaderProgram)}`;
             }
         }
     } catch (e) {
         console.log(e);
     }
-    altPosition = false;
-    setTimeout(function alterPosition() {
-        altPosition = !altPosition;
-        setTimeout(alterPosition, 2000);
-    }, 2000);
 }
 
 function initLocations() {
     locations = {
-        vertexPosition: gl.getAttribLocation(shaderProgram, "vertexPosition"),
-        selectionMatrix: gl.getAttribLocation(shaderProgram, "aSelection"),
-        vertexEye: gl.getAttribLocation(shaderProgram, "aEye"),
-        vertexDiffuse: gl.getAttribLocation(shaderProgram, "aDiffuse"),
-        vertexAmbient: gl.getAttribLocation(shaderProgram, "aAmbient"),
-        vertexSpecular: gl.getAttribLocation(shaderProgram, "aSpecular"),
-        vertexNormal: gl.getAttribLocation(shaderProgram, "aNormal"),
-        vertexN: gl.getAttribLocation(shaderProgram, "a_n"),
+        vertexPosition: gl.getAttribLocation(shaderProgram, 'vertexPosition'),
+        selectionMatrix: gl.getAttribLocation(shaderProgram, 'aSelection'),
+        vertexEye: gl.getAttribLocation(shaderProgram, 'aEye'),
+        vertexDiffuse: gl.getAttribLocation(shaderProgram, 'aDiffuse'),
+        vertexAmbient: gl.getAttribLocation(shaderProgram, 'aAmbient'),
+        vertexSpecular: gl.getAttribLocation(shaderProgram, 'aSpecular'),
+        vertexNormal: gl.getAttribLocation(shaderProgram, 'aNormal'),
+        vertexN: gl.getAttribLocation(shaderProgram, 'a_n'),
 
-        uModelViewMatrix: gl.getUniformLocation(shaderProgram, "uModelView"),
-        projectionMatrix: gl.getUniformLocation(shaderProgram, "uProjection"),
-        lightPosition: gl.getUniformLocation(shaderProgram, "uLightPosition"),
-        lightDiffuse: gl.getUniformLocation(shaderProgram, "uLightDiffuse"),
-        lightAmbient: gl.getUniformLocation(shaderProgram, "uLightAmbient"),
-        lightSpecular: gl.getUniformLocation(shaderProgram, "uLightSpecular"),
+        uModelViewMatrix: gl.getUniformLocation(shaderProgram, 'uModelView'),
+        projectionMatrix: gl.getUniformLocation(shaderProgram, 'uProjection'),
+        lightPosition: gl.getUniformLocation(shaderProgram, 'uLightPosition'),
+        lightDiffuse: gl.getUniformLocation(shaderProgram, 'uLightDiffuse'),
+        lightAmbient: gl.getUniformLocation(shaderProgram, 'uLightAmbient'),
+        lightSpecular: gl.getUniformLocation(shaderProgram, 'uLightSpecular'),
     };
 }
 
@@ -197,29 +140,29 @@ function initBuffers() {
 
     triBufferSize = 0;
 
-    var inputTriangles = getJSONFile(INPUT_TRIANGLES_URL, "triangles");
+    const inputTriangles = getJSONFile(INPUT_TRIANGLES_URL, 'triangles');
     triangles = inputTriangles;
-    if (inputTriangles != String.null) {
-        var ambientArray = [];
-        var diffuseArray = [];
-        var specularArray = [];
-        var nArray = [];
-        var eyeArray = [];
+    if (inputTriangles !== String.null) {
+        const ambientArray = [];
+        const diffuseArray = [];
+        const specularArray = [];
+        let nArray = [];
+        const eyeArray = [];
 
-        var vertexArray = [];
-        var normalArray = [];
-        var indexArray = [];
+        const vertexArray = [];
+        const normalArray = [];
+        const indexArray = [];
 
-        inputTriangles.forEach(data => {
+        inputTriangles.forEach((data) => {
             vertexArray.push(...data.vertices.flat());
             normalArray.push(...data.normals.flat());
             eyeArray.push(...data.vertices.map(() => [...Eye, 1.0]).flat());
         });
 
-        var offset = 0;
-        inputTriangles.forEach(data => {
-            data.triangles.forEach(triangle => {
-                indexArray.push(...triangle.map(index => index + offset));
+        let offset = 0;
+        inputTriangles.forEach((data) => {
+            data.triangles.forEach((triangle) => {
+                indexArray.push(...triangle.map((index) => index + offset));
             });
 
             diffuseArray.push(...data.vertices.map(() => [...data.material.diffuse, 1.0]).flat());
@@ -227,11 +170,11 @@ function initBuffers() {
             specularArray.push(...data.vertices.map(() => [...data.material.specular, 1.0]).flat());
 
             offset += data.vertices.length;
-        })
+        });
 
-        nArray = inputTriangles.map(triangle => triangle.vertices.map(() => triangle.material.n).flat()).flat();
+        nArray = inputTriangles.map((triangle) => triangle.vertices.map(() => triangle.material.n).flat()).flat();
 
-        if (selectionMatrices.length == 0) {
+        if (selectionMatrices.length === 0) {
             inputTriangles.forEach(() => selectionMatrices.push(mat4.create()));
         }
 
@@ -316,24 +259,22 @@ function draw() {
     gl.enableVertexAttribArray(locations.vertexNormal);
     gl.enableVertexAttribArray(locations.vertexN);
 
-
-    var lightVertexArray = [];
-    var inputLights = getJSONFile(INPUT_LIGHTS_URL, "lights");
+    const lightVertexArray = [];
+    const ambientArray = [];
+    const diffuseArray = [];
+    const specularArray = [];
+    const inputLights = getJSONFile(INPUT_LIGHTS_URL, 'lights');
     if (inputLights != String.null) {
-        var ambientArray = [];
-        var diffuseArray = [];
-        var specularArray = [];
-        inputLights.forEach(data => {
+        inputLights.forEach((data) => {
             lightVertexArray.push(data.x, data.y, data.z);
         });
 
-        inputLights.forEach(data => {
+        inputLights.forEach((data) => {
             diffuseArray.push(...data.diffuse);
             ambientArray.push(...data.ambient);
             specularArray.push(...data.specular);
         });
     }
-
 
     const fov = (90 * Math.PI) / 180;
     const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
@@ -350,39 +291,38 @@ function draw() {
     gl.uniformMatrix4fv(
         locations.projectionMatrix,
         false,
-        projectionMatrix);
+        projectionMatrix,
+    );
 
     gl.uniformMatrix4fv(
         locations.uModelViewMatrix,
         false,
-        uModelViewMatrix);
-
+        uModelViewMatrix,
+    );
 
     gl.uniform4fv(
         locations.lightPosition,
         lightVertexArray.concat([1.0]),
     );
 
-    var lightDiffuseAttrib = gl.getUniformLocation(shaderProgram, "uLightDiffuse");
+    const lightDiffuseAttrib = gl.getUniformLocation(shaderProgram, 'uLightDiffuse');
     gl.uniform4fv(
         lightDiffuseAttrib,
         diffuseArray.concat([1.0]),
-    )
+    );
 
-    var lightAmbientAttrib = gl.getUniformLocation(shaderProgram, "uLightAmbient");
+    const lightAmbientAttrib = gl.getUniformLocation(shaderProgram, 'uLightAmbient');
     gl.uniform4fv(
         lightAmbientAttrib,
         ambientArray.concat([1.0]),
-    )
+    );
 
-    var lightSpecularAttrib = gl.getUniformLocation(shaderProgram, "uLightSpecular");
+    const lightSpecularAttrib = gl.getUniformLocation(shaderProgram, 'uLightSpecular');
     gl.uniform4fv(
         lightSpecularAttrib,
         specularArray.concat([1.0]),
-    )
+    );
     gl.drawElements(gl.TRIANGLES, triBufferSize, gl.UNSIGNED_SHORT, 0);
-
-
 }
 
 function getTriangleCenter(triangles) {
@@ -422,217 +362,218 @@ function main() {
         I and P — rotate selection clockwise (I) and counterclockwise (P) around view Z (roll)
     */
 
-    document.addEventListener('keydown', function (event) {
+    document.addEventListener('keydown', (event) => {
         const delta = 0.1;
-        var v, center;
+        let v; let
+            center;
 
-        if (selection != -1) {
+        if (selection !== -1) {
             center = getTriangleCenter(triangles[selection]);
         }
         switch (event.key) {
-            case "a":
-                Eye[0] += delta;
-                break;
-            case "d":
-                Eye[0] -= delta;
-                break;
+        case 'a':
+            Eye[0] += delta;
+            break;
+        case 'd':
+            Eye[0] -= delta;
+            break;
 
-            case "w":
-                Eye[2] += delta;
-                break;
-            case "s":
-                Eye[2] -= delta;
-                break;
+        case 'w':
+            Eye[2] += delta;
+            break;
+        case 's':
+            Eye[2] -= delta;
+            break;
 
-            case "q":
-                Eye[1] += delta;
-                break;
-            case "e":
-                Eye[1] -= delta;
-                break;
+        case 'q':
+            Eye[1] += delta;
+            break;
+        case 'e':
+            Eye[1] -= delta;
+            break;
 
-            case "A":
-                vec3.rotateY(at, at, Eye, glMatrix.toRadian(delta));
-                break;
-            case "D":
-                vec3.rotateY(at, at, Eye, glMatrix.toRadian(-delta));
-                break;
+        case 'A':
+            vec3.rotateY(at, at, Eye, glMatrix.toRadian(delta));
+            break;
+        case 'D':
+            vec3.rotateY(at, at, Eye, glMatrix.toRadian(-delta));
+            break;
 
-            case "W":
-                vec3.rotateX(at, at, Eye, glMatrix.toRadian(delta));
-                vec3.rotateX(up, up, Eye, glMatrix.toRadian(delta));
-                break;
-            case "S":
-                vec3.rotateX(at, at, Eye, glMatrix.toRadian(-delta));
-                vec3.rotateX(up, up, Eye, glMatrix.toRadian(-delta));
-                break;
+        case 'W':
+            vec3.rotateX(at, at, Eye, glMatrix.toRadian(delta));
+            vec3.rotateX(up, up, Eye, glMatrix.toRadian(delta));
+            break;
+        case 'S':
+            vec3.rotateX(at, at, Eye, glMatrix.toRadian(-delta));
+            vec3.rotateX(up, up, Eye, glMatrix.toRadian(-delta));
+            break;
 
-            case "ArrowLeft":
-                if (selection != -1) {
-                    v = [1 / 1.2, 1 / 1.2, 1];
-                    mat4.scale(selectionMatrices[selection], selectionMatrices[selection], v);
-                }
-                selection--;
-                if (selection < 0) {
-                    selection = selectionMatrices.length - 1;
-                }
-                console.log(selection);
-                v = [1.2, 1.2, 1];
+        case 'ArrowLeft':
+            if (selection !== -1) {
+                v = [1 / 1.2, 1 / 1.2, 1];
                 mat4.scale(selectionMatrices[selection], selectionMatrices[selection], v);
-                break;
-            case "ArrowRight":
-                if (selection != -1) {
-                    v = [1 / 1.2, 1 / 1.2, 1];
-                    mat4.scale(selectionMatrices[selection], selectionMatrices[selection], v);
-                }
-                selection++;
-                if (selection > selectionMatrices.length - 1) {
-                    selection = 0;
-                }
-                v = [1.2, 1.2, 1];
+            }
+            selection--;
+            if (selection < 0) {
+                selection = selectionMatrices.length - 1;
+            }
+            v = [1.2, 1.2, 1];
+            mat4.scale(selectionMatrices[selection], selectionMatrices[selection], v);
+            break;
+        case 'ArrowRight':
+            if (selection !== -1) {
+                v = [1 / 1.2, 1 / 1.2, 1];
                 mat4.scale(selectionMatrices[selection], selectionMatrices[selection], v);
-                break;
-            case " ":
-                if (selection != -1) {
-                    v = [1 / 1.2, 1 / 1.2, 1];
-                    mat4.scale(selectionMatrices[selection], selectionMatrices[selection], v);
-                    selection = -1
-                }
-                break;
+            }
+            selection++;
+            if (selection > selectionMatrices.length - 1) {
+                selection = 0;
+            }
+            v = [1.2, 1.2, 1];
+            mat4.scale(selectionMatrices[selection], selectionMatrices[selection], v);
+            break;
+        case ' ':
+            if (selection !== -1) {
+                v = [1 / 1.2, 1 / 1.2, 1];
+                mat4.scale(selectionMatrices[selection], selectionMatrices[selection], v);
+                selection = -1;
+            }
+            break;
 
-            case "k":
-                if (selection != -1) {
-                    v = [delta, 0, 0];
-                    mat4.translate(selectionMatrices[selection], selectionMatrices[selection], v);
-                }
-                break;
-            case ";":
-                if (selection != -1) {
-                    v = [-delta, 0, 0];
-                    mat4.translate(selectionMatrices[selection], selectionMatrices[selection], v);
-                }
-                break;
+        case 'k':
+            if (selection !== -1) {
+                v = [delta, 0, 0];
+                mat4.translate(selectionMatrices[selection], selectionMatrices[selection], v);
+            }
+            break;
+        case ';':
+            if (selection !== -1) {
+                v = [-delta, 0, 0];
+                mat4.translate(selectionMatrices[selection], selectionMatrices[selection], v);
+            }
+            break;
 
-            case "o":
-                if (selection != -1) {
-                    v = [0, 0, delta];
-                    mat4.translate(selectionMatrices[selection], selectionMatrices[selection], v);
-                }
-                break;
-            case "l":
-                if (selection != -1) {
-                    v = [0, 0, -delta];
-                    mat4.translate(selectionMatrices[selection], selectionMatrices[selection], v);
-                }
-                break;
+        case 'o':
+            if (selection !== -1) {
+                v = [0, 0, delta];
+                mat4.translate(selectionMatrices[selection], selectionMatrices[selection], v);
+            }
+            break;
+        case 'l':
+            if (selection !== -1) {
+                v = [0, 0, -delta];
+                mat4.translate(selectionMatrices[selection], selectionMatrices[selection], v);
+            }
+            break;
 
-            case "i":
-                if (selection != -1) {
-                    v = [0, delta, 0];
-                    mat4.translate(selectionMatrices[selection], selectionMatrices[selection], v);
-                }
-                break;
-            case "p":
-                if (selection != -1) {
-                    v = [0, -delta, 0];
-                    mat4.translate(selectionMatrices[selection], selectionMatrices[selection], v);
-                }
-                break;
+        case 'i':
+            if (selection !== -1) {
+                v = [0, delta, 0];
+                mat4.translate(selectionMatrices[selection], selectionMatrices[selection], v);
+            }
+            break;
+        case 'p':
+            if (selection !== -1) {
+                v = [0, -delta, 0];
+                mat4.translate(selectionMatrices[selection], selectionMatrices[selection], v);
+            }
+            break;
 
-            case "K":
-                if (selection != -1) {
-                    mat4.translate(selectionMatrices[selection], selectionMatrices[selection], center);
-                    mat4.rotateY(selectionMatrices[selection], selectionMatrices[selection], delta);
+        case 'K':
+            if (selection !== -1) {
+                mat4.translate(selectionMatrices[selection], selectionMatrices[selection], center);
+                mat4.rotateY(selectionMatrices[selection], selectionMatrices[selection], delta);
+                vec3.negate(center, center);
+                mat4.translate(selectionMatrices[selection], selectionMatrices[selection], center);
+            }
+            break;
+        case ':':
+            if (selection !== -1) {
+                mat4.translate(selectionMatrices[selection], selectionMatrices[selection], center);
+                mat4.rotateY(selectionMatrices[selection], selectionMatrices[selection], -delta);
+                vec3.negate(center, center);
+                mat4.translate(selectionMatrices[selection], selectionMatrices[selection], center);
+            }
+            break;
+
+        case 'O':
+            if (selection !== -1) {
+                mat4.translate(selectionMatrices[selection], selectionMatrices[selection], center);
+                mat4.rotateX(selectionMatrices[selection], selectionMatrices[selection], delta);
+                vec3.negate(center, center);
+                mat4.translate(selectionMatrices[selection], selectionMatrices[selection], center);
+            }
+            break;
+        case 'L':
+            if (selection !== -1) {
+                mat4.translate(selectionMatrices[selection], selectionMatrices[selection], center);
+                mat4.rotateX(selectionMatrices[selection], selectionMatrices[selection], -delta);
+                vec3.negate(center, center);
+                mat4.translate(selectionMatrices[selection], selectionMatrices[selection], center);
+            }
+            break;
+
+        case 'I':
+            if (selection !== -1) {
+                mat4.translate(selectionMatrices[selection], selectionMatrices[selection], center);
+                mat4.rotateZ(selectionMatrices[selection], selectionMatrices[selection], delta);
+                vec3.negate(center, center);
+                mat4.translate(selectionMatrices[selection], selectionMatrices[selection], center);
+            }
+            break;
+        case 'P':
+            if (selection !== -1) {
+                mat4.translate(selectionMatrices[selection], selectionMatrices[selection], center);
+                mat4.rotateZ(selectionMatrices[selection], selectionMatrices[selection], -delta);
+                vec3.negate(center, center);
+                mat4.translate(selectionMatrices[selection], selectionMatrices[selection], center);
+            }
+            break;
+
+        case '!':
+            if (!mystery) {
+                // Make it my own
+                INPUT_TRIANGLES_URL = 'attributes/triangles3.json';
+                gl = canvas.getContext('webgl');
+                Eye = [-0.5, -0.5, -1.0];
+
+                for (const key in buffers) {
+                    gl.deleteBuffer(buffers[key]);
+                }
+
+
+                // Reset the context
+                gl = null;
+                selectionMatrices = [];
+                triBufferSize = 0;
+                shaderProgram = null;
+                locations = null;
+                buffers = null;
+                selectionBufferData = [];
+                selection = -1;
+                triangles = null;
+                mystery = true;
+
+                setupWebGL();
+                setupShaders();
+                initLocations();
+                initBuffers();
+                requestAnimationFrame(draw);
+            } else {
+                for (let s = 0; s < selectionMatrices.length; s++) {
+                    center = getTriangleCenter(triangles[s]);
+                    mat4.translate(selectionMatrices[s], selectionMatrices[s], center);
+                    mat4.rotateY(selectionMatrices[s], selectionMatrices[s], -delta);
                     vec3.negate(center, center);
-                    mat4.translate(selectionMatrices[selection], selectionMatrices[selection], center);
-                }
-                break;
-            case ":":
-                if (selection != -1) {
-                    mat4.translate(selectionMatrices[selection], selectionMatrices[selection], center);
-                    mat4.rotateY(selectionMatrices[selection], selectionMatrices[selection], -delta);
-                    vec3.negate(center, center);
-                    mat4.translate(selectionMatrices[selection], selectionMatrices[selection], center);
-                }
-                break;
-
-            case "O":
-                if (selection != -1) {
-                    mat4.translate(selectionMatrices[selection], selectionMatrices[selection], center);
-                    mat4.rotateX(selectionMatrices[selection], selectionMatrices[selection], delta);
-                    vec3.negate(center, center);
-                    mat4.translate(selectionMatrices[selection], selectionMatrices[selection], center);
-                }
-                break;
-            case "L":
-                if (selection != -1) {
-                    mat4.translate(selectionMatrices[selection], selectionMatrices[selection], center);
-                    mat4.rotateX(selectionMatrices[selection], selectionMatrices[selection], -delta);
-                    vec3.negate(center, center);
-                    mat4.translate(selectionMatrices[selection], selectionMatrices[selection], center);
-                }
-                break;
-
-            case "I":
-                if (selection != -1) {
-                    mat4.translate(selectionMatrices[selection], selectionMatrices[selection], center);
-                    mat4.rotateZ(selectionMatrices[selection], selectionMatrices[selection], delta);
-                    vec3.negate(center, center);
-                    mat4.translate(selectionMatrices[selection], selectionMatrices[selection], center);
-                }
-                break;
-            case "P":
-                if (selection != -1) {
-                    mat4.translate(selectionMatrices[selection], selectionMatrices[selection], center);
-                    mat4.rotateZ(selectionMatrices[selection], selectionMatrices[selection], -delta);
-                    vec3.negate(center, center);
-                    mat4.translate(selectionMatrices[selection], selectionMatrices[selection], center);
-                }
-                break;
-
-            case "!":
-                if (!mystery) {
-                    // Make it my own
-                    INPUT_TRIANGLES_URL = "attributes/triangles3.json";
-                    gl = canvas.getContext("webgl");
-                    Eye = [-0.5, -0.5, -1.0];
-                    for (var key in buffers) {
-                        gl.deleteBuffer(buffers[key]);
-                    }
-
-                    // Reset the context
-                    gl = null;
-                    selectionMatrices = [];
-                    triBufferSize = 0;
-                    shaderProgram = null;
-                    locations = null;
-                    buffers = null;
-                    selectionBufferData = [];
-                    selection = -1;
-                    triangles = null;
-                    mystery = true;
-
-                    setupWebGL();
-                    setupShaders();
-                    initLocations();
-                    initBuffers();
-                    requestAnimationFrame(draw);
-                } else {
-                    for (var s = 0; s < selectionMatrices.length; s++) {
-                        center = getTriangleCenter(triangles[s]);
-                        mat4.translate(selectionMatrices[s], selectionMatrices[s], center);
-                        mat4.rotateY(selectionMatrices[s], selectionMatrices[s], -delta);
-                        vec3.negate(center, center);
-                        mat4.translate(selectionMatrices[s], selectionMatrices[s], center);
+                    mat4.translate(selectionMatrices[s], selectionMatrices[s], center);
                 }
             }
+            break;
 
-
-            default:
-                break;
+        default:
+            break;
         }
         initBuffers();
         requestAnimationFrame(draw);
     }, false);
-
 }
