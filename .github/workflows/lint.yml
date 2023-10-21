@@ -11,8 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: stefanoeb/eslint-action@1.0.2
-      - name: Install modules
-        run: yarn
+      - name: Installing node_modules
+        run: npm install
       - name: Run ESLint
         run: eslint . --ext .js,.jsx,.ts,.tsx
