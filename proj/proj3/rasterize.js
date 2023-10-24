@@ -156,7 +156,7 @@ function initBuffers() {
         inputTriangles.forEach((data) => {
             vertexArray.push(...data.vertices.flat());
             normalArray.push(...data.normals.flat());
-            eyeArray.push(...data.vertices.map(() => [...Eye, 1.0]).flat());
+            eyeArray.push(...data.vertices.map(() => [...Eye]).flat());
         });
 
         let offset = 0;
@@ -165,9 +165,9 @@ function initBuffers() {
                 indexArray.push(...triangle.map((index) => index + offset));
             });
 
-            diffuseArray.push(...data.vertices.map(() => [...data.material.diffuse, 1.0]).flat());
-            ambientArray.push(...data.vertices.map(() => [...data.material.ambient, 1.0]).flat());
-            specularArray.push(...data.vertices.map(() => [...data.material.specular, 1.0]).flat());
+            diffuseArray.push(...data.vertices.map(() => [...data.material.diffuse]).flat());
+            ambientArray.push(...data.vertices.map(() => [...data.material.ambient]).flat());
+            specularArray.push(...data.vertices.map(() => [...data.material.specular]).flat());
 
             offset += data.vertices.length;
         });
@@ -234,16 +234,16 @@ function draw() {
     }
 
     gl.bindBuffer(gl.ARRAY_BUFFER, buffers.eyeBuffer);
-    gl.vertexAttribPointer(locations.vertexEye, 4, gl.FLOAT, false, 0, 0);
+    gl.vertexAttribPointer(locations.vertexEye, 3, gl.FLOAT, false, 0, 0);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, buffers.diffuseBuffer);
-    gl.vertexAttribPointer(locations.vertexDiffuse, 4, gl.FLOAT, false, 0, 0);
+    gl.vertexAttribPointer(locations.vertexDiffuse, 3, gl.FLOAT, false, 0, 0);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, buffers.ambientBuffer);
-    gl.vertexAttribPointer(locations.vertexAmbient, 4, gl.FLOAT, false, 0, 0);
+    gl.vertexAttribPointer(locations.vertexAmbient, 3, gl.FLOAT, false, 0, 0);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, buffers.specularBuffer);
-    gl.vertexAttribPointer(locations.vertexSpecular, 4, gl.FLOAT, false, 0, 0);
+    gl.vertexAttribPointer(locations.vertexSpecular, 3, gl.FLOAT, false, 0, 0);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, buffers.normalBuffer);
     gl.vertexAttribPointer(locations.vertexNormal, 3, gl.FLOAT, false, 0, 0);
@@ -300,27 +300,27 @@ function draw() {
         uModelViewMatrix,
     );
 
-    gl.uniform4fv(
+    gl.uniform3fv(
         locations.lightPosition,
-        lightVertexArray.concat([1.0]),
+        lightVertexArray,
     );
 
     const lightDiffuseAttrib = gl.getUniformLocation(shaderProgram, 'uLightDiffuse');
-    gl.uniform4fv(
+    gl.uniform3fv(
         lightDiffuseAttrib,
-        diffuseArray.concat([1.0]),
+        diffuseArray,
     );
 
     const lightAmbientAttrib = gl.getUniformLocation(shaderProgram, 'uLightAmbient');
-    gl.uniform4fv(
+    gl.uniform3fv(
         lightAmbientAttrib,
-        ambientArray.concat([1.0]),
+        ambientArray,
     );
 
     const lightSpecularAttrib = gl.getUniformLocation(shaderProgram, 'uLightSpecular');
-    gl.uniform4fv(
+    gl.uniform3fv(
         lightSpecularAttrib,
-        specularArray.concat([1.0]),
+        specularArray,
     );
     gl.drawElements(gl.TRIANGLES, triBufferSize, gl.UNSIGNED_SHORT, 0);
 }
