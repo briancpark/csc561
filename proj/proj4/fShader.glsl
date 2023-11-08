@@ -1,19 +1,42 @@
-precision highp float;
+precision mediump float;// set float to medium precision
 
-varying vec3 vL;
-varying vec3 vN;
-varying vec3 vE;
-varying vec3 vAmbient;
-varying vec3 vDiffuse;
-varying vec3 vSpecular;
-varying vec3 vNormal;
-varying float v_n;
+// eye location
+uniform vec3 uEyePosition;// the eye's position in world
+
+// light properties
+uniform vec3 uLightAmbient;// the light's ambient color
+uniform vec3 uLightDiffuse;// the light's diffuse color
+uniform vec3 uLightSpecular;// the light's specular color
+uniform vec3 uLightPosition;// the light's position
+
+// material properties
+uniform vec3 uAmbient;// the ambient reflectivity
+uniform vec3 uDiffuse;// the diffuse reflectivity
+uniform vec3 uSpecular;// the specular reflectivity
+uniform float uShininess;// the specular exponent
+
+// geometry properties
+varying vec3 vWorldPos;// world xyz of fragment
+varying vec3 vVertexNormal;// normal of fragment
 
 void main(void) {
-    vec3 vH = normalize(vL + vE);
-    float diffuseScale = max(0.0, dot(vN, vL));
-    vec3 diffuse = diffuseScale * vDiffuse;
-    float specularScale = pow(max(0.0, dot(vN, vH)), v_n);
-    vec3 specular = specularScale * vSpecular;
-    gl_FragColor = vec4(vAmbient + diffuse + specular, 1.0);
+
+    // ambient term
+    vec3 ambient = uAmbient*uLightAmbient;
+
+    // diffuse term
+    vec3 normal = normalize(vVertexNormal);
+    vec3 light = normalize(uLightPosition - vWorldPos);
+    float lambert = max(0.0, dot(normal, light));
+    vec3 diffuse = uDiffuse*uLightDiffuse*lambert;// diffuse term
+
+    // specular term
+    vec3 eye = normalize(uEyePosition - vWorldPos);
+    vec3 halfVec = normalize(light+eye);
+    float highlight = pow(max(0.0, dot(normal, halfVec)), uShininess);
+    vec3 specular = uSpecular*uLightSpecular*highlight;// specular term
+
+    // combine to output color
+    vec3 colorOut = ambient + diffuse + specular;// no specular yet
+    gl_FragColor = vec4(colorOut, 1.0);
 }
