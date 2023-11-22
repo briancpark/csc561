@@ -1,4 +1,7 @@
-# prog4 no shell
+# Project 4: Texture and Transparency
 
-This repo branch contains program 4 files (e.g. textures) but no shell code in nc state cg class 2023. 
+Most of the time was spending how the solution shell works. After that, only a few minor additions are needed to support texturing!
 
+For extra credit, I implemented 
+
+There is some code copied from online resources, most notably [Using Textures in WebGL](https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/Tutorial/Using_textures_in_WebGL)

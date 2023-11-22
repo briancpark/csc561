@@ -19,6 +19,12 @@ uniform float uShininess;// the specular exponent
 varying vec3 vWorldPos;// world xyz of fragment
 varying vec3 vVertexNormal;// normal of fragment
 
+// texture properties
+uniform float uAlpha;
+uniform bool uReplace;
+varying highp vec2 vUV;
+uniform sampler2D uTexture;
+
 void main(void) {
 
     // ambient term
@@ -38,5 +44,10 @@ void main(void) {
 
     // combine to output color
     vec3 colorOut = ambient + diffuse + specular;// no specular yet
-    gl_FragColor = vec4(colorOut, 1.0);
+    highp vec4 tempTex = texture2D(uTexture, vUV);
+
+    if (uReplace)
+        gl_FragColor = vec4(tempTex.rgb, tempTex.a);
+    else
+        gl_FragColor = vec4(tempTex.rgb * colorOut, tempTex.a * uAlpha);
 }

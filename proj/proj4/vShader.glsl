@@ -7,6 +7,9 @@ uniform mat4 upvmMatrix;// the project view model matrix
 varying vec3 vWorldPos;// interpolated world position of vertex
 varying vec3 vVertexNormal;// interpolated normal for frag shader
 
+attribute vec2 aTexCoord;
+varying highp vec2 vUV;
+
 void main(void) {
 
     // vertex position
@@ -17,4 +20,5 @@ void main(void) {
     // vertex normal (assume no non-uniform scale)
     vec4 vWorldNormal4 = umMatrix * vec4(aVertexNormal, 0.0);
     vVertexNormal = normalize(vec3(vWorldNormal4.x, vWorldNormal4.y, vWorldNormal4.z));
+    vUV = aTexCoord * vec2(-1.0, -1.0);
 }
