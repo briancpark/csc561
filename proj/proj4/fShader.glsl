@@ -46,8 +46,9 @@ void main(void) {
     vec3 colorOut = ambient + diffuse + specular;// no specular yet
     highp vec4 tempTex = texture2D(uTexture, vUV);
 
-    if (uReplace)
+    if (uReplace) {
         gl_FragColor = vec4(tempTex.rgb, tempTex.a);
-    else
+    } else {
         gl_FragColor = vec4(tempTex.rgb * colorOut, tempTex.a * uAlpha);
+    }
 }

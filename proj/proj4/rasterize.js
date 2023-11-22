@@ -202,138 +202,138 @@ function handleKeyDown(event) {
     handleKeyDown.modelOn = handleKeyDown.modelOn == undefined ? null : handleKeyDown.modelOn; // nothing selected initially
 
     switch (event.code) {
-        // model selection
-        case 'Space':
-            if (handleKeyDown.modelOn != null) {
-                handleKeyDown.modelOn.on = false;
-            } // turn off highlighted model
-            handleKeyDown.modelOn = null; // no highlighted model
-            handleKeyDown.whichOn = -1; // nothing highlighted
-            break;
-        case 'ArrowRight': // select next triangle set
-            highlightModel(modelEnum.TRIANGLES, (handleKeyDown.whichOn + 1) % numTriangleSets);
-            break;
-        case 'ArrowLeft': // select previous triangle set
-            highlightModel(modelEnum.TRIANGLES, (handleKeyDown.whichOn > 0) ? handleKeyDown.whichOn - 1 : numTriangleSets - 1);
-            break;
-        case 'ArrowUp': // select next ellipsoid
-            highlightModel(modelEnum.ELLIPSOID, (handleKeyDown.whichOn + 1) % numEllipsoids);
-            break;
-        case 'ArrowDown': // select previous ellipsoid
-            highlightModel(modelEnum.ELLIPSOID, (handleKeyDown.whichOn > 0) ? handleKeyDown.whichOn - 1 : numEllipsoids - 1);
-            break;
+    // model selection
+    case 'Space':
+        if (handleKeyDown.modelOn != null) {
+            handleKeyDown.modelOn.on = false;
+        } // turn off highlighted model
+        handleKeyDown.modelOn = null; // no highlighted model
+        handleKeyDown.whichOn = -1; // nothing highlighted
+        break;
+    case 'ArrowRight': // select next triangle set
+        highlightModel(modelEnum.TRIANGLES, (handleKeyDown.whichOn + 1) % numTriangleSets);
+        break;
+    case 'ArrowLeft': // select previous triangle set
+        highlightModel(modelEnum.TRIANGLES, (handleKeyDown.whichOn > 0) ? handleKeyDown.whichOn - 1 : numTriangleSets - 1);
+        break;
+    case 'ArrowUp': // select next ellipsoid
+        highlightModel(modelEnum.ELLIPSOID, (handleKeyDown.whichOn + 1) % numEllipsoids);
+        break;
+    case 'ArrowDown': // select previous ellipsoid
+        highlightModel(modelEnum.ELLIPSOID, (handleKeyDown.whichOn > 0) ? handleKeyDown.whichOn - 1 : numEllipsoids - 1);
+        break;
 
         // view change
-        case 'KeyA': // translate view left, rotate left with shift
-            Center = vec3.add(Center, Center, vec3.scale(temp, viewRight, viewDelta));
-            if (!event.getModifierState('Shift')) {
-                Eye = vec3.add(Eye, Eye, vec3.scale(temp, viewRight, viewDelta));
-            }
-            break;
-        case 'KeyD': // translate view right, rotate right with shift
-            Center = vec3.add(Center, Center, vec3.scale(temp, viewRight, -viewDelta));
-            if (!event.getModifierState('Shift')) {
-                Eye = vec3.add(Eye, Eye, vec3.scale(temp, viewRight, -viewDelta));
-            }
-            break;
-        case 'KeyS': // translate view backward, rotate up with shift
-            if (event.getModifierState('Shift')) {
-                Center = vec3.add(Center, Center, vec3.scale(temp, Up, viewDelta));
-                Up = vec3.cross(Up, viewRight, vec3.subtract(lookAt, Center, Eye)); /* global side effect */
-            } else {
-                Eye = vec3.add(Eye, Eye, vec3.scale(temp, lookAt, -viewDelta));
-                Center = vec3.add(Center, Center, vec3.scale(temp, lookAt, -viewDelta));
-            } // end if shift not pressed
-            break;
-        case 'KeyW': // translate view forward, rotate down with shift
-            if (event.getModifierState('Shift')) {
-                Center = vec3.add(Center, Center, vec3.scale(temp, Up, -viewDelta));
-                Up = vec3.cross(Up, viewRight, vec3.subtract(lookAt, Center, Eye)); /* global side effect */
-            } else {
-                Eye = vec3.add(Eye, Eye, vec3.scale(temp, lookAt, viewDelta));
-                Center = vec3.add(Center, Center, vec3.scale(temp, lookAt, viewDelta));
-            } // end if shift not pressed
-            break;
-        case 'KeyQ': // translate view up, rotate counterclockwise with shift
-            if (event.getModifierState('Shift')) {
-                Up = vec3.normalize(Up, vec3.add(Up, Up, vec3.scale(temp, viewRight, -viewDelta)));
-            } else {
-                Eye = vec3.add(Eye, Eye, vec3.scale(temp, Up, viewDelta));
-                Center = vec3.add(Center, Center, vec3.scale(temp, Up, viewDelta));
-            } // end if shift not pressed
-            break;
-        case 'KeyE': // translate view down, rotate clockwise with shift
-            if (event.getModifierState('Shift')) {
-                Up = vec3.normalize(Up, vec3.add(Up, Up, vec3.scale(temp, viewRight, viewDelta)));
-            } else {
-                Eye = vec3.add(Eye, Eye, vec3.scale(temp, Up, -viewDelta));
-                Center = vec3.add(Center, Center, vec3.scale(temp, Up, -viewDelta));
-            } // end if shift not pressed
-            break;
-        case 'Escape': // reset view to default
-            Eye = vec3.copy(Eye, defaultEye);
-            Center = vec3.copy(Center, defaultCenter);
-            Up = vec3.copy(Up, defaultUp);
-            break;
+    case 'KeyA': // translate view left, rotate left with shift
+        Center = vec3.add(Center, Center, vec3.scale(temp, viewRight, viewDelta));
+        if (!event.getModifierState('Shift')) {
+            Eye = vec3.add(Eye, Eye, vec3.scale(temp, viewRight, viewDelta));
+        }
+        break;
+    case 'KeyD': // translate view right, rotate right with shift
+        Center = vec3.add(Center, Center, vec3.scale(temp, viewRight, -viewDelta));
+        if (!event.getModifierState('Shift')) {
+            Eye = vec3.add(Eye, Eye, vec3.scale(temp, viewRight, -viewDelta));
+        }
+        break;
+    case 'KeyS': // translate view backward, rotate up with shift
+        if (event.getModifierState('Shift')) {
+            Center = vec3.add(Center, Center, vec3.scale(temp, Up, viewDelta));
+            Up = vec3.cross(Up, viewRight, vec3.subtract(lookAt, Center, Eye)); /* global side effect */
+        } else {
+            Eye = vec3.add(Eye, Eye, vec3.scale(temp, lookAt, -viewDelta));
+            Center = vec3.add(Center, Center, vec3.scale(temp, lookAt, -viewDelta));
+        } // end if shift not pressed
+        break;
+    case 'KeyW': // translate view forward, rotate down with shift
+        if (event.getModifierState('Shift')) {
+            Center = vec3.add(Center, Center, vec3.scale(temp, Up, -viewDelta));
+            Up = vec3.cross(Up, viewRight, vec3.subtract(lookAt, Center, Eye)); /* global side effect */
+        } else {
+            Eye = vec3.add(Eye, Eye, vec3.scale(temp, lookAt, viewDelta));
+            Center = vec3.add(Center, Center, vec3.scale(temp, lookAt, viewDelta));
+        } // end if shift not pressed
+        break;
+    case 'KeyQ': // translate view up, rotate counterclockwise with shift
+        if (event.getModifierState('Shift')) {
+            Up = vec3.normalize(Up, vec3.add(Up, Up, vec3.scale(temp, viewRight, -viewDelta)));
+        } else {
+            Eye = vec3.add(Eye, Eye, vec3.scale(temp, Up, viewDelta));
+            Center = vec3.add(Center, Center, vec3.scale(temp, Up, viewDelta));
+        } // end if shift not pressed
+        break;
+    case 'KeyE': // translate view down, rotate clockwise with shift
+        if (event.getModifierState('Shift')) {
+            Up = vec3.normalize(Up, vec3.add(Up, Up, vec3.scale(temp, viewRight, viewDelta)));
+        } else {
+            Eye = vec3.add(Eye, Eye, vec3.scale(temp, Up, -viewDelta));
+            Center = vec3.add(Center, Center, vec3.scale(temp, Up, -viewDelta));
+        } // end if shift not pressed
+        break;
+    case 'Escape': // reset view to default
+        Eye = vec3.copy(Eye, defaultEye);
+        Center = vec3.copy(Center, defaultCenter);
+        Up = vec3.copy(Up, defaultUp);
+        break;
 
         // model transformation
-        case 'KeyK': // translate left, rotate left with shift
-            if (event.getModifierState('Shift')) {
-                rotateModel(Up, dirEnum.NEGATIVE);
-            } else {
-                translateModel(vec3.scale(temp, viewRight, viewDelta));
-            }
-            break;
-        case 'Semicolon': // translate right, rotate right with shift
-            if (event.getModifierState('Shift')) {
-                rotateModel(Up, dirEnum.POSITIVE);
-            } else {
-                translateModel(vec3.scale(temp, viewRight, -viewDelta));
-            }
-            break;
-        case 'KeyL': // translate backward, rotate up with shift
-            if (event.getModifierState('Shift')) {
-                rotateModel(viewRight, dirEnum.POSITIVE);
-            } else {
-                translateModel(vec3.scale(temp, lookAt, -viewDelta));
-            }
-            break;
-        case 'KeyO': // translate forward, rotate down with shift
-            if (event.getModifierState('Shift')) {
-                rotateModel(viewRight, dirEnum.NEGATIVE);
-            } else {
-                translateModel(vec3.scale(temp, lookAt, viewDelta));
-            }
-            break;
-        case 'KeyI': // translate up, rotate counterclockwise with shift
-            if (event.getModifierState('Shift')) {
-                rotateModel(lookAt, dirEnum.POSITIVE);
-            } else {
-                translateModel(vec3.scale(temp, Up, viewDelta));
-            }
-            break;
-        case 'KeyP': // translate down, rotate clockwise with shift
-            if (event.getModifierState('Shift')) {
-                rotateModel(lookAt, dirEnum.NEGATIVE);
-            } else {
-                translateModel(vec3.scale(temp, Up, -viewDelta));
-            }
-            break;
-        case 'KeyB':
-            replace = !replace;
-            break;
-        case 'Backspace': // reset model transforms to default
-            for (var whichTriSet = 0; whichTriSet < numTriangleSets; whichTriSet++) {
-                vec3.set(inputTriangles[whichTriSet].translation, 0, 0, 0);
-                vec3.set(inputTriangles[whichTriSet].xAxis, 1, 0, 0);
-                vec3.set(inputTriangles[whichTriSet].yAxis, 0, 1, 0);
-            } // end for all triangle sets
-            for (let whichEllipsoid = 0; whichEllipsoid < numEllipsoids; whichEllipsoid++) {
-                vec3.set(inputEllipsoids[whichEllipsoid].translation, 0, 0, 0);
-                vec3.set(inputEllipsoids[whichTriSet].xAxis, 1, 0, 0);
-                vec3.set(inputEllipsoids[whichTriSet].yAxis, 0, 1, 0);
-            } // end for all ellipsoids
-            break;
+    case 'KeyK': // translate left, rotate left with shift
+        if (event.getModifierState('Shift')) {
+            rotateModel(Up, dirEnum.NEGATIVE);
+        } else {
+            translateModel(vec3.scale(temp, viewRight, viewDelta));
+        }
+        break;
+    case 'Semicolon': // translate right, rotate right with shift
+        if (event.getModifierState('Shift')) {
+            rotateModel(Up, dirEnum.POSITIVE);
+        } else {
+            translateModel(vec3.scale(temp, viewRight, -viewDelta));
+        }
+        break;
+    case 'KeyL': // translate backward, rotate up with shift
+        if (event.getModifierState('Shift')) {
+            rotateModel(viewRight, dirEnum.POSITIVE);
+        } else {
+            translateModel(vec3.scale(temp, lookAt, -viewDelta));
+        }
+        break;
+    case 'KeyO': // translate forward, rotate down with shift
+        if (event.getModifierState('Shift')) {
+            rotateModel(viewRight, dirEnum.NEGATIVE);
+        } else {
+            translateModel(vec3.scale(temp, lookAt, viewDelta));
+        }
+        break;
+    case 'KeyI': // translate up, rotate counterclockwise with shift
+        if (event.getModifierState('Shift')) {
+            rotateModel(lookAt, dirEnum.POSITIVE);
+        } else {
+            translateModel(vec3.scale(temp, Up, viewDelta));
+        }
+        break;
+    case 'KeyP': // translate down, rotate clockwise with shift
+        if (event.getModifierState('Shift')) {
+            rotateModel(lookAt, dirEnum.NEGATIVE);
+        } else {
+            translateModel(vec3.scale(temp, Up, -viewDelta));
+        }
+        break;
+    case 'KeyB':
+        replace = !replace;
+        break;
+    case 'Backspace': // reset model transforms to default
+        for (var whichTriSet = 0; whichTriSet < numTriangleSets; whichTriSet++) {
+            vec3.set(inputTriangles[whichTriSet].translation, 0, 0, 0);
+            vec3.set(inputTriangles[whichTriSet].xAxis, 1, 0, 0);
+            vec3.set(inputTriangles[whichTriSet].yAxis, 0, 1, 0);
+        } // end for all triangle sets
+        for (let whichEllipsoid = 0; whichEllipsoid < numEllipsoids; whichEllipsoid++) {
+            vec3.set(inputEllipsoids[whichEllipsoid].translation, 0, 0, 0);
+            vec3.set(inputEllipsoids[whichTriSet].xAxis, 1, 0, 0);
+            vec3.set(inputEllipsoids[whichTriSet].yAxis, 0, 1, 0);
+        } // end for all ellipsoids
+        break;
     } // end switch
 } // end handleKeyDown
 
@@ -350,7 +350,7 @@ function setupWebGL() {
     const bkgdImage = new Image();
     bkgdImage.crossOrigin = 'Anonymous';
     bkgdImage.src = 'attributes/sky.jpg';
-    bkgdImage.onload = function () {
+    bkgdImage.onload = function() {
         const iw = bkgdImage.width;
         const ih = bkgdImage.height;
         imageContext.drawImage(bkgdImage, 0, 0, iw, ih, 0, 0, cw, ch);
@@ -402,28 +402,28 @@ function loadModels() {
                     }
                 } // end for each latitude
                 ellipsoidVertices.push(0, 1, 0); // add north pole
-                ellipsoidVertices = ellipsoidVertices.map(function (val, idx) { // position and scale ellipsoid
+                ellipsoidVertices = ellipsoidVertices.map(function(val, idx) { // position and scale ellipsoid
                     switch (idx % 3) {
-                        case 0: // x
-                            return (val * currEllipsoid.a + currEllipsoid.x);
-                        case 1: // y
-                            return (val * currEllipsoid.b + currEllipsoid.y);
-                        case 2: // z
-                            return (val * currEllipsoid.c + currEllipsoid.z);
+                    case 0: // x
+                        return (val * currEllipsoid.a + currEllipsoid.x);
+                    case 1: // y
+                        return (val * currEllipsoid.b + currEllipsoid.y);
+                    case 2: // z
+                        return (val * currEllipsoid.c + currEllipsoid.z);
                     } // end switch
                 });
 
                 // make normals using the ellipsoid gradient equation
                 // resulting normals are unnormalized: we rely on shaders to normalize
                 var ellipsoidNormals = ellipsoidVertices.slice(); // start with a copy of the transformed verts
-                ellipsoidNormals = ellipsoidNormals.map(function (val, idx) { // calculate each normal
+                ellipsoidNormals = ellipsoidNormals.map(function(val, idx) { // calculate each normal
                     switch (idx % 3) {
-                        case 0: // x
-                            return (2 / (currEllipsoid.a * currEllipsoid.a) * (val - currEllipsoid.x));
-                        case 1: // y
-                            return (2 / (currEllipsoid.b * currEllipsoid.b) * (val - currEllipsoid.y));
-                        case 2: // z
-                            return (2 / (currEllipsoid.c * currEllipsoid.c) * (val - currEllipsoid.z));
+                    case 0: // x
+                        return (2 / (currEllipsoid.a * currEllipsoid.a) * (val - currEllipsoid.x));
+                    case 1: // y
+                        return (2 / (currEllipsoid.b * currEllipsoid.b) * (val - currEllipsoid.y));
+                    case 2: // z
+                        return (2 / (currEllipsoid.c * currEllipsoid.c) * (val - currEllipsoid.z));
                     } // end switch
                 });
 
