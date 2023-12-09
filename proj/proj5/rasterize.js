@@ -4,10 +4,9 @@
 
 /* assignment specific globals */
 let INPUT_FROG_URL = 'attributes/frog.json';
-let INPUT_TRUCK_URL = 'attributes/truck.json';
 const INPUT_ELLIPSOIDS_URL = 'attributes/ellipsoids.json'; // ellipsoids file loc
-const defaultEye = vec3.fromValues(0.5, 0.5, -1.5); // default eye position in world space
-const defaultCenter = vec3.fromValues(0.5, 0.5, 0.5); // default view direction in world space
+const defaultEye = vec3.fromValues(0.0, -0.0, -2.5); // default eye position in world space
+const defaultCenter = vec3.fromValues(0.0, 1.5, 0); // default view direction in world space
 const defaultUp = vec3.fromValues(0, 1, 0); // default view up vector
 const lightAmbient = vec3.fromValues(1, 1, 1); // default light ambient emission
 const lightDiffuse = vec3.fromValues(1, 1, 1); // default light diffuse emission
@@ -50,35 +49,18 @@ let Center = vec3.clone(defaultCenter); // view direction in world space
 let Up = vec3.clone(defaultUp); // view up vector in world space
 
 // 14 x 14 grid
+STEP_SCALE = 0.3;
 let playerPosition = { x: 7, y: 0 };
+DISTANCE = 2.0;
+function gameLoop() {
+    // Update the x position of the second frog, and wrap around the screen
+    vec3.add(inputFrog[1].translation, inputFrog[1].translation, vec3.fromValues(0.01, 0, 0));
+    if (inputFrog[1].translation[0] > DISTANCE) {
+        inputFrog[1].translation[0] = -DISTANCE;
+    }
 
-// arrow keys for movement, make sure to check if the player is in bounds
-function handleKeyDown(event) {
-    switch (event.code) {
-    case 'ArrowUp':
-        if (playerPosition.y < 13) {
-            playerPosition.y++;
-        }
-        break;
-    case 'ArrowDown':
-        if (playerPosition.y > 0) {
-            playerPosition.y--;
-        }
-        break;
-    case 'ArrowLeft':
-        if (playerPosition.x > 0) {
-            playerPosition.x--;
-        }
-        break;
-    case 'ArrowRight':
-        if (playerPosition.x < 13) {
-            playerPosition.x++;
-        }
-        break;
-
-    default:
-        break;
-    }        
+    // Call the game loop again on the next frame
+    requestAnimationFrame(gameLoop);
 }
 
 
@@ -239,16 +221,35 @@ function handleKeyDown(event) {
         handleKeyDown.whichOn = -1; // nothing highlighted
         break;
     case 'ArrowRight': // select next triangle set
-        highlightModel(modelEnum.TRIANGLES, (handleKeyDown.whichOn + 1) % numTriangleSets);
+        // update the frog's position
+        if (playerPosition.x < 13) {
+            playerPosition.x += 1;
+            vec3.add(inputFrog[0].translation, inputFrog[0].translation, vec3.fromValues(-STEP_SCALE, 0, 0));
+        }
+        // highlightModel(modelEnum.TRIANGLES, (handleKeyDown.whichOn + 1) % numTriangleSets);
         break;
     case 'ArrowLeft': // select previous triangle set
-        highlightModel(modelEnum.TRIANGLES, (handleKeyDown.whichOn > 0) ? handleKeyDown.whichOn - 1 : numTriangleSets - 1);
+        // highlightModel(modelEnum.TRIANGLES, (handleKeyDown.whichOn > 0) ? handleKeyDown.whichOn - 1 : numTriangleSets - 1);
+        if (playerPosition.x > 0) {
+            playerPosition.x -= 1;
+            vec3.add(inputFrog[0].translation, inputFrog[0].translation, vec3.fromValues(STEP_SCALE, 0, 0));
+        }
         break;
     case 'ArrowUp': // select next ellipsoid
-        highlightModel(modelEnum.ELLIPSOID, (handleKeyDown.whichOn + 1) % numEllipsoids);
+        // highlightModel(modelEnum.ELLIPSOID, (handleKeyDown.whichOn + 1) % numEllipsoids);
+        if (playerPosition.y < 13) {
+            playerPosition.y += 1;
+            vec3.add(inputFrog[0].translation, inputFrog[0].translation, vec3.fromValues(0, STEP_SCALE, 0));
+        }
+
         break;
     case 'ArrowDown': // select previous ellipsoid
-        highlightModel(modelEnum.ELLIPSOID, (handleKeyDown.whichOn > 0) ? handleKeyDown.whichOn - 1 : numEllipsoids - 1);
+        // highlightModel(modelEnum.ELLIPSOID, (handleKeyDown.whichOn > 0) ? handleKeyDown.whichOn - 1 : numEllipsoids - 1);
+        if (playerPosition.y > 0) {
+            playerPosition.y -= 1;
+            vec3.add(inputFrog[0].translation, inputFrog[0].translation, vec3.fromValues(0, -STEP_SCALE, 0));
+
+        }
         break;
 
         // view change
@@ -531,117 +532,6 @@ function loadModels() {
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, triangleBuffers[whichSet]); // activate that buffer
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(inputFrog[whichSet].glTriangles), gl.STATIC_DRAW); // data in
     } // end for each triangle set
-    
-    // inputFrog = getJSONFile(INPUT_TRUCK_URL, 'trucks'); // read in the triangle data
-
-    // let whichSetVert; // index of vertex in current triangle set
-    // let whichSetTri; // index of triangle in current triangle set
-    // let vtxToAdd; // vtx coords to add to the coord array
-    // let normToAdd; // vtx normal to add to the coord array
-    // let triToAdd; // tri indices to add to the index array
-    // const maxCorner = vec3.fromValues(Number.MIN_VALUE, Number.MIN_VALUE, Number.MIN_VALUE); // bbox corner
-    // const minCorner = vec3.fromValues(Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE); // other corner
-
-    // // process each triangle set to load webgl vertex and triangle buffers
-    // numTriangleSets = inputFrog.length; // remember how many tri sets
-    // for (let whichSet = 0; whichSet < numTriangleSets; whichSet++) { // for each tri set
-    //     // set up hilighting, modeling translation and rotation
-    //     inputFrog[whichSet].center = vec3.fromValues(0, 0, 0); // center point of tri set
-    //     inputFrog[whichSet].on = false; // not highlighted
-    //     inputFrog[whichSet].translation = vec3.fromValues(0, 0, 0); // no translation
-    //     inputFrog[whichSet].xAxis = vec3.fromValues(1, 0, 0); // model X axis
-    //     inputFrog[whichSet].yAxis = vec3.fromValues(0, 1, 0); // model Y axis
-
-    //     textures[whichSet] = loadTexture(gl, 'attributes/' + inputFrog[whichSet].material.texture);
-
-    //     // set up the vertex and normal arrays, define model center and axes
-    //     inputFrog[whichSet].glVertices = []; // flat coord list for webgl
-    //     inputFrog[whichSet].glNormals = []; // flat normal list for webgl
-    //     inputFrog[whichSet].glUVs = [];
-    //     const numVerts = inputFrog[whichSet].vertices.length; // num vertices in tri set
-    //     for (whichSetVert = 0; whichSetVert < numVerts; whichSetVert++) { // verts in set
-    //         vtxToAdd = inputFrog[whichSet].vertices[whichSetVert]; // get vertex to add
-    //         normToAdd = inputFrog[whichSet].normals[whichSetVert]; // get normal to add
-    //         uvsToAdd = inputFrog[whichSet].uvs[whichSetVert];
-    //         inputFrog[whichSet].glVertices.push(vtxToAdd[0], vtxToAdd[1], vtxToAdd[2]); // put coords in set coord list
-    //         inputFrog[whichSet].glNormals.push(normToAdd[0], normToAdd[1], normToAdd[2]); // put normal in set coord list
-    //         inputFrog[whichSet].glUVs.push(uvsToAdd[0], uvsToAdd[1]);
-    //         vec3.max(maxCorner, maxCorner, vtxToAdd); // update world bounding box corner maxima
-    //         vec3.min(minCorner, minCorner, vtxToAdd); // update world bounding box corner minima
-    //         vec3.add(inputFrog[whichSet].center, inputFrog[whichSet].center, vtxToAdd); // add to ctr sum
-    //     } // end for vertices in set
-    //     vec3.scale(inputFrog[whichSet].center, inputFrog[whichSet].center, 1 / numVerts); // avg ctr sum
-
-    //     // send the vertex coords and normals to webGL
-    //     vertexBuffers[whichSet] = gl.createBuffer(); // init empty webgl set vertex coord buffer
-    //     gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffers[whichSet]); // activate that buffer
-    //     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(inputFrog[whichSet].glVertices), gl.STATIC_DRAW); // data in
-    //     normalBuffers[whichSet] = gl.createBuffer(); // init empty webgl set normal component buffer
-    //     gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffers[whichSet]); // activate that buffer
-    //     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(inputFrog[whichSet].glNormals), gl.STATIC_DRAW); // data in
-
-    //     UVBuffer[whichSet] = gl.createBuffer();
-    //     gl.bindBuffer(gl.ARRAY_BUFFER, UVBuffer[whichSet]);
-    //     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(inputFrog[whichSet].glUVs), gl.STATIC_DRAW);
-
-    //     // set up the triangle index array, adjusting indices across sets
-    //     inputFrog[whichSet].glTriangles = []; // flat index list for webgl
-    //     triSetSizes[whichSet] = inputFrog[whichSet].triangles.length; // number of tris in this set
-    //     for (whichSetTri = 0; whichSetTri < triSetSizes[whichSet]; whichSetTri++) {
-    //         triToAdd = inputFrog[whichSet].triangles[whichSetTri]; // get tri to add
-    //         inputFrog[whichSet].glTriangles.push(triToAdd[0], triToAdd[1], triToAdd[2]); // put indices in set list
-    //     } // end for triangles in set
-
-    //     // send the triangle indices to webGL
-    //     triangleBuffers.push(gl.createBuffer()); // init empty triangle index buffer
-    //     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, triangleBuffers[whichSet]); // activate that buffer
-    //     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(inputFrog[whichSet].glTriangles), gl.STATIC_DRAW); // data in
-    // } // end for each triangle set
-
-
-    inputEllipsoids = getJSONFile(INPUT_ELLIPSOIDS_URL, 'ellipsoids'); // read in the ellipsoids
-
-    // init ellipsoid highlighting, translation and rotation; update bbox
-    let ellipsoid; // current ellipsoid
-    let ellipsoidModel; // current ellipsoid triangular model
-    const temp = vec3.create(); // an intermediate vec3
-    const minXYZ = vec3.create();
-    const maxXYZ = vec3.create(); // min/max xyz from ellipsoid
-    numEllipsoids = inputEllipsoids.length; // remember how many ellipsoids
-    for (let whichEllipsoid = 0; whichEllipsoid < numEllipsoids; whichEllipsoid++) {
-        // set up various stats and transforms for this ellipsoid
-        ellipsoid = inputEllipsoids[whichEllipsoid];
-        ellipsoid.on = false; // ellipsoids begin without highlight
-        ellipsoid.translation = vec3.fromValues(0, 0, 0); // ellipsoids begin without translation
-        ellipsoid.xAxis = vec3.fromValues(1, 0, 0); // ellipsoid X axis
-        ellipsoid.yAxis = vec3.fromValues(0, 1, 0); // ellipsoid Y axis
-        ellipsoid.center = vec3.fromValues(ellipsoid.x, ellipsoid.y, ellipsoid.z); // locate ellipsoid ctr
-        vec3.set(minXYZ, ellipsoid.x - ellipsoid.a, ellipsoid.y - ellipsoid.b, ellipsoid.z - ellipsoid.c);
-        vec3.set(maxXYZ, ellipsoid.x + ellipsoid.a, ellipsoid.y + ellipsoid.b, ellipsoid.z + ellipsoid.c);
-        vec3.min(minCorner, minCorner, minXYZ); // update world bbox min corner
-        vec3.max(maxCorner, maxCorner, maxXYZ); // update world bbox max corner
-
-        // make the ellipsoid model
-        ellipsoidModel = makeEllipsoid(ellipsoid, 32);
-
-        // send the ellipsoid vertex coords and normals to webGL
-        vertexBuffers.push(gl.createBuffer()); // init empty webgl ellipsoid vertex coord buffer
-        gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffers[vertexBuffers.length - 1]); // activate that buffer
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(ellipsoidModel.vertices), gl.STATIC_DRAW); // data in
-        normalBuffers.push(gl.createBuffer()); // init empty webgl ellipsoid vertex normal buffer
-        gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffers[normalBuffers.length - 1]); // activate that buffer
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(ellipsoidModel.normals), gl.STATIC_DRAW); // data in
-
-        triSetSizes.push(ellipsoidModel.triangles.length);
-
-        // send the triangle indices to webGL
-        triangleBuffers.push(gl.createBuffer()); // init empty triangle index buffer
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, triangleBuffers[triangleBuffers.length - 1]); // activate that buffer
-        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(ellipsoidModel.triangles), gl.STATIC_DRAW); // data in
-    } // end for each ellipsoid
-
-    viewDelta = vec3.length(vec3.subtract(temp, maxCorner, minCorner)) / 100; // set global
-
 } 
 
 // setup the webGL shaders
@@ -650,71 +540,67 @@ function setupShaders() {
     const vShaderCode = loadShaderFile('./vshader.glsl');
     const fShaderCode = loadShaderFile('./fshader.glsl');
 
-    try {
-        const fShader = gl.createShader(gl.FRAGMENT_SHADER); // create frag shader
-        gl.shaderSource(fShader, fShaderCode); // attach code to shader
-        gl.compileShader(fShader); // compile the code for gpu execution
+    const fShader = gl.createShader(gl.FRAGMENT_SHADER); // create frag shader
+    gl.shaderSource(fShader, fShaderCode); // attach code to shader
+    gl.compileShader(fShader); // compile the code for gpu execution
 
-        const vShader = gl.createShader(gl.VERTEX_SHADER); // create vertex shader
-        gl.shaderSource(vShader, vShaderCode); // attach code to shader
-        gl.compileShader(vShader); // compile the code for gpu execution
+    const vShader = gl.createShader(gl.VERTEX_SHADER); // create vertex shader
+    gl.shaderSource(vShader, vShaderCode); // attach code to shader
+    gl.compileShader(vShader); // compile the code for gpu execution
 
-        if (!gl.getShaderParameter(fShader, gl.COMPILE_STATUS)) { // bad frag shader compile
-            throw 'error during fragment shader compile: ' + gl.getShaderInfoLog(fShader);
-            gl.deleteShader(fShader);
-        } else if (!gl.getShaderParameter(vShader, gl.COMPILE_STATUS)) { // bad vertex shader compile
-            throw 'error during vertex shader compile: ' + gl.getShaderInfoLog(vShader);
-            gl.deleteShader(vShader);
-        } else { // no compile errors
-            const shaderProgram = gl.createProgram(); // create the single shader program
-            gl.attachShader(shaderProgram, fShader); // put frag shader in program
-            gl.attachShader(shaderProgram, vShader); // put vertex shader in program
-            gl.linkProgram(shaderProgram); // link program into gl context
+    if (!gl.getShaderParameter(fShader, gl.COMPILE_STATUS)) { // bad frag shader compile
+        throw 'error during fragment shader compile: ' + gl.getShaderInfoLog(fShader);
+        gl.deleteShader(fShader);
+    } else if (!gl.getShaderParameter(vShader, gl.COMPILE_STATUS)) { // bad vertex shader compile
+        throw 'error during vertex shader compile: ' + gl.getShaderInfoLog(vShader);
+        gl.deleteShader(vShader);
+    } else { // no compile errors
+        const shaderProgram = gl.createProgram(); // create the single shader program
+        gl.attachShader(shaderProgram, fShader); // put frag shader in program
+        gl.attachShader(shaderProgram, vShader); // put vertex shader in program
+        gl.linkProgram(shaderProgram); // link program into gl context
 
-            if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) { // bad program link
-                throw 'error during shader program linking: ' + gl.getProgramInfoLog(shaderProgram);
-            } else { // no shader program link errors
-                gl.useProgram(shaderProgram); // activate shader program (frag and vert)
+        if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) { // bad program link
+            throw 'error during shader program linking: ' + gl.getProgramInfoLog(shaderProgram);
+        } else { // no shader program link errors
+            gl.useProgram(shaderProgram); // activate shader program (frag and vert)
 
-                // locate and enable vertex attributes
-                vPosAttribLoc = gl.getAttribLocation(shaderProgram, 'aVertexPosition'); // ptr to vertex pos attrib
-                gl.enableVertexAttribArray(vPosAttribLoc); // connect attrib to array
-                vNormAttribLoc = gl.getAttribLocation(shaderProgram, 'aVertexNormal'); // ptr to vertex normal attrib
-                gl.enableVertexAttribArray(vNormAttribLoc); // connect attrib to array
+            // locate and enable vertex attributes
+            vPosAttribLoc = gl.getAttribLocation(shaderProgram, 'aVertexPosition'); // ptr to vertex pos attrib
+            gl.enableVertexAttribArray(vPosAttribLoc); // connect attrib to array
+            vNormAttribLoc = gl.getAttribLocation(shaderProgram, 'aVertexNormal'); // ptr to vertex normal attrib
+            gl.enableVertexAttribArray(vNormAttribLoc); // connect attrib to array
 
-                texCoordAttirbLoc = gl.getAttribLocation(shaderProgram, 'aTexCoord'); // ptr to texture pos attrib
-                gl.enableVertexAttribArray(texCoordAttirbLoc); // connect attrib to array
+            texCoordAttirbLoc = gl.getAttribLocation(shaderProgram, 'aTexCoord'); // ptr to texture pos attrib
+            gl.enableVertexAttribArray(texCoordAttirbLoc); // connect attrib to array
 
-                // locate vertex uniforms
-                mMatrixULoc = gl.getUniformLocation(shaderProgram, 'umMatrix'); // ptr to mmat
-                pvmMatrixULoc = gl.getUniformLocation(shaderProgram, 'upvmMatrix'); // ptr to pvmmat
+            // locate vertex uniforms
+            mMatrixULoc = gl.getUniformLocation(shaderProgram, 'umMatrix'); // ptr to mmat
+            pvmMatrixULoc = gl.getUniformLocation(shaderProgram, 'upvmMatrix'); // ptr to pvmmat
 
-                // locate fragment uniforms
-                const eyePositionULoc = gl.getUniformLocation(shaderProgram, 'uEyePosition'); // ptr to eye position
-                const lightAmbientULoc = gl.getUniformLocation(shaderProgram, 'uLightAmbient'); // ptr to light ambient
-                const lightDiffuseULoc = gl.getUniformLocation(shaderProgram, 'uLightDiffuse'); // ptr to light diffuse
-                const lightSpecularULoc = gl.getUniformLocation(shaderProgram, 'uLightSpecular'); // ptr to light specular
-                const lightPositionULoc = gl.getUniformLocation(shaderProgram, 'uLightPosition'); // ptr to light position
-                ambientULoc = gl.getUniformLocation(shaderProgram, 'uAmbient'); // ptr to ambient
-                diffuseULoc = gl.getUniformLocation(shaderProgram, 'uDiffuse'); // ptr to diffuse
-                specularULoc = gl.getUniformLocation(shaderProgram, 'uSpecular'); // ptr to specular
-                shininessULoc = gl.getUniformLocation(shaderProgram, 'uShininess'); // ptr to shininess
+            // locate fragment uniforms
+            const eyePositionULoc = gl.getUniformLocation(shaderProgram, 'uEyePosition'); // ptr to eye position
+            const lightAmbientULoc = gl.getUniformLocation(shaderProgram, 'uLightAmbient'); // ptr to light ambient
+            const lightDiffuseULoc = gl.getUniformLocation(shaderProgram, 'uLightDiffuse'); // ptr to light diffuse
+            const lightSpecularULoc = gl.getUniformLocation(shaderProgram, 'uLightSpecular'); // ptr to light specular
+            const lightPositionULoc = gl.getUniformLocation(shaderProgram, 'uLightPosition'); // ptr to light position
+            ambientULoc = gl.getUniformLocation(shaderProgram, 'uAmbient'); // ptr to ambient
+            diffuseULoc = gl.getUniformLocation(shaderProgram, 'uDiffuse'); // ptr to diffuse
+            specularULoc = gl.getUniformLocation(shaderProgram, 'uSpecular'); // ptr to specular
+            shininessULoc = gl.getUniformLocation(shaderProgram, 'uShininess'); // ptr to shininess
 
-                // locate texture uniforms
-                textureULoc = gl.getUniformLocation(shaderProgram, 'uTexture');
-                alphaULoc = gl.getUniformLocation(shaderProgram, 'uAlpha');
-                replaceULoc = gl.getUniformLocation(shaderProgram, 'uReplace');
+            // locate texture uniforms
+            textureULoc = gl.getUniformLocation(shaderProgram, 'uTexture');
+            alphaULoc = gl.getUniformLocation(shaderProgram, 'uAlpha');
+            replaceULoc = gl.getUniformLocation(shaderProgram, 'uReplace');
 
-                // pass global constants into fragment uniforms
-                gl.uniform3fv(eyePositionULoc, Eye); // pass in the eye's position
-                gl.uniform3fv(lightAmbientULoc, lightAmbient); // pass in the light's ambient emission
-                gl.uniform3fv(lightDiffuseULoc, lightDiffuse); // pass in the light's diffuse emission
-                gl.uniform3fv(lightSpecularULoc, lightSpecular); // pass in the light's specular emission
-                gl.uniform3fv(lightPositionULoc, lightPosition); // pass in the light's position
-            }
+            // pass global constants into fragment uniforms
+            gl.uniform3fv(eyePositionULoc, Eye); // pass in the eye's position
+            gl.uniform3fv(lightAmbientULoc, lightAmbient); // pass in the light's ambient emission
+            gl.uniform3fv(lightDiffuseULoc, lightDiffuse); // pass in the light's diffuse emission
+            gl.uniform3fv(lightSpecularULoc, lightSpecular); // pass in the light's specular emission
+            gl.uniform3fv(lightPositionULoc, lightPosition); // pass in the light's position
         }
-    } catch (e) {
-        console.log(e);
     }
 }
 
@@ -958,4 +844,6 @@ function main() {
     loadModels(); // load in the models from tri file
     setupShaders(); // setup the webGL shaders
     renderModels(); // draw the triangles using webGL
+    // Start the game loop
+gameLoop();
 } // end main
