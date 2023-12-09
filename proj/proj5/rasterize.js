@@ -54,6 +54,9 @@ const playerPosition = {x: 7, y: 0};
 var DISTANCE = 0.8;
 var speed0 = 0.01;
 var speed1 = 0.005;
+var speed2 = 0.0025;
+var speed3 = 0.015;
+var speed4 = 0.025;
 let lastTime = 0;
 const fpsInterval = 1000 / 30; // 30 FPS
 
@@ -81,6 +84,18 @@ function initEnemies() {
     inputFrog[6].translation = vec3.fromValues(-0.4, 0, 0);
     inputFrog[7].translation = vec3.fromValues(-0.8, 0, 0);
     inputFrog[8].translation = vec3.fromValues(0.4, 0, 0);
+
+    inputFrog[9].translation = vec3.fromValues(0.0, 0, 0);
+    inputFrog[10].translation = vec3.fromValues(-0.3, 0, 0);
+    inputFrog[11].translation = vec3.fromValues(0.3, 0, 0);
+    inputFrog[12].translation = vec3.fromValues(0.6, 0, 0);
+    inputFrog[13].translation = vec3.fromValues(-0.6, 0, 0);
+
+    inputFrog[14].translation = vec3.fromValues(0.0, 0, 0);
+    inputFrog[15].translation = vec3.fromValues(-0.5, 0, 0);
+    inputFrog[16].translation = vec3.fromValues(0.5, 0, 0);
+
+    inputFrog[17].translation = vec3.fromValues(0.0, 0, 0);
 }
 
 function gameLoop(time) {
@@ -100,6 +115,21 @@ function gameLoop(time) {
         vec3.add(inputFrog[6].translation, inputFrog[6].translation, vec3.fromValues(-speed1, 0, 0));
         vec3.add(inputFrog[7].translation, inputFrog[7].translation, vec3.fromValues(-speed1, 0, 0));
         vec3.add(inputFrog[8].translation, inputFrog[8].translation, vec3.fromValues(-speed1, 0, 0));
+
+        vec3.add(inputFrog[9].translation, inputFrog[9].translation, vec3.fromValues(speed2, 0, 0));
+        vec3.add(inputFrog[10].translation, inputFrog[10].translation, vec3.fromValues(speed2, 0, 0));
+        vec3.add(inputFrog[11].translation, inputFrog[11].translation, vec3.fromValues(speed2, 0, 0));
+        vec3.add(inputFrog[12].translation, inputFrog[12].translation, vec3.fromValues(speed2, 0, 0));
+        vec3.add(inputFrog[13].translation, inputFrog[13].translation, vec3.fromValues(speed2, 0, 0));
+
+        vec3.add(inputFrog[14].translation, inputFrog[14].translation, vec3.fromValues(-speed3, 0, 0));
+        vec3.add(inputFrog[15].translation, inputFrog[15].translation, vec3.fromValues(-speed3, 0, 0));
+        vec3.add(inputFrog[16].translation, inputFrog[16].translation, vec3.fromValues(-speed3, 0, 0));
+
+        // snake
+        vec3.add(inputFrog[17].translation, inputFrog[17].translation, vec3.fromValues(speed4, 0, 0));
+
+
         if (inputFrog[1].translation[0] > DISTANCE) {
             inputFrog[1].translation[0] = -DISTANCE;
         }
@@ -124,6 +154,36 @@ function gameLoop(time) {
         }
         if (inputFrog[8].translation[0] < -DISTANCE) {
             inputFrog[8].translation[0] = DISTANCE;
+        }
+
+        if (inputFrog[9].translation[0] > DISTANCE) {
+            inputFrog[9].translation[0] = -DISTANCE;
+        }
+        if (inputFrog[10].translation[0] > DISTANCE) {
+            inputFrog[10].translation[0] = -DISTANCE;
+        }
+        if (inputFrog[11].translation[0] > DISTANCE) {
+            inputFrog[11].translation[0] = -DISTANCE;
+        }
+        if (inputFrog[12].translation[0] > DISTANCE) {
+            inputFrog[12].translation[0] = -DISTANCE;
+        }
+        if (inputFrog[13].translation[0] > DISTANCE) {
+            inputFrog[13].translation[0] = -DISTANCE;
+        }
+
+        if (inputFrog[14].translation[0] < -DISTANCE) {
+            inputFrog[14].translation[0] = DISTANCE;
+        }
+        if (inputFrog[15].translation[0] < -DISTANCE) {
+            inputFrog[15].translation[0] = DISTANCE;
+        }
+        if (inputFrog[16].translation[0] < -DISTANCE) {
+            inputFrog[16].translation[0] = DISTANCE;
+        }
+
+        if (inputFrog[17].translation[0] > DISTANCE) {
+            inputFrog[17].translation[0] = -DISTANCE;
         }
     }
 }
