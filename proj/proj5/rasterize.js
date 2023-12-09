@@ -51,7 +51,7 @@ let Up = vec3.clone(defaultUp); // view up vector in world space
 // 14 x 14 grid
 STEP_SCALE = 0.1;
 const playerPosition = {x: 7, y: 0};
-var DISTANCE = 2;
+var DISTANCE = 0.8;
 var speed0 = 0.01;
 var speed1 = 0.02;
 let lastTime = 0;
@@ -66,6 +66,17 @@ walls = [
     {x: 12, y: 11},
 ];
 
+// function playStepSound() {  
+//     var audio = new Audio('assets/step.mp3');
+//     audio.play();
+// }
+
+function initEnemies() {
+    inputFrog[1].translation = vec3.fromValues(0.0, 0, 0);
+    inputFrog[2].translation = vec3.fromValues(-0.4, 0, 0);
+    inputFrog[3].translation = vec3.fromValues(-0.8, 0, 0);
+    inputFrog[4].translation = vec3.fromValues(0.4, 0, 0);
+}
 
 function gameLoop(time) {
     // Call the game loop again on the next frame at a rate of 60 frames per second
@@ -80,10 +91,10 @@ function gameLoop(time) {
         vec3.add(inputFrog[3].translation, inputFrog[3].translation, vec3.fromValues(speed0, 0, 0));
         vec3.add(inputFrog[4].translation, inputFrog[4].translation, vec3.fromValues(speed0, 0, 0));
 
-        vec3.add(inputFrog[5].translation, inputFrog[5].translation, vec3.fromValues(-speed1, 0, 0));
-        vec3.add(inputFrog[6].translation, inputFrog[6].translation, vec3.fromValues(-speed1, 0, 0));
-        vec3.add(inputFrog[7].translation, inputFrog[7].translation, vec3.fromValues(-speed1, 0, 0));
-        vec3.add(inputFrog[8].translation, inputFrog[8].translation, vec3.fromValues(-speed1, 0, 0));
+        // vec3.add(inputFrog[5].translation, inputFrog[5].translation, vec3.fromValues(-speed1, 0, 0));
+        // vec3.add(inputFrog[6].translation, inputFrog[6].translation, vec3.fromValues(-speed1, 0, 0));
+        // vec3.add(inputFrog[7].translation, inputFrog[7].translation, vec3.fromValues(-speed1, 0, 0));
+        // vec3.add(inputFrog[8].translation, inputFrog[8].translation, vec3.fromValues(-speed1, 0, 0));
         if (inputFrog[1].translation[0] > DISTANCE) {
             inputFrog[1].translation[0] = -DISTANCE;
         }
@@ -840,5 +851,6 @@ function main() {
     setupShaders(); // setup the webGL shaders
     renderModels(); // draw the triangles using webGL
     // Start the game loop
+    initEnemies();
     gameLoop();
 } // end main
