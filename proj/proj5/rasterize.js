@@ -5,8 +5,8 @@
 /* assignment specific globals */
 let INPUT_FROG_URL = 'attributes/frog.json';
 const INPUT_ELLIPSOIDS_URL = 'attributes/ellipsoids.json'; // ellipsoids file loc
-const defaultEye = vec3.fromValues(0.0, -0.0, -2.5); // default eye position in world space
-const defaultCenter = vec3.fromValues(0.0, 1.5, 0); // default view direction in world space
+const defaultEye = vec3.fromValues(0.0, 1, -1.0); // default eye position in world space
+const defaultCenter = vec3.fromValues(0.0, 0.9, 0); // default view direction in world space
 const defaultUp = vec3.fromValues(0, 1, 0); // default view up vector
 const lightAmbient = vec3.fromValues(1, 1, 1); // default light ambient emission
 const lightDiffuse = vec3.fromValues(1, 1, 1); // default light diffuse emission
@@ -25,7 +25,7 @@ const vertexBuffers = []; // this contains vertex coordinate lists by set, in tr
 const normalBuffers = []; // this contains normal component lists by set, in triples
 const triSetSizes = []; // this contains the size of each triangle set
 const triangleBuffers = []; // lists of indices into vertexBuffers by set, in triples
-let viewDelta = 0; // how much to displace view with each key press
+let viewDelta = 0.1; // how much to displace view with each key press
 
 let replace = true;
 const UVBuffer = [];
@@ -49,14 +49,27 @@ let Center = vec3.clone(defaultCenter); // view direction in world space
 let Up = vec3.clone(defaultUp); // view up vector in world space
 
 // 14 x 14 grid
-STEP_SCALE = 0.3;
+STEP_SCALE = 0.1;
 let playerPosition = { x: 7, y: 0 };
-DISTANCE = 2.0;
+var DISTANCE = 2.0;
+var speed0 = 0.01;
 function gameLoop() {
     // Update the x position of the second frog, and wrap around the screen
-    vec3.add(inputFrog[1].translation, inputFrog[1].translation, vec3.fromValues(0.01, 0, 0));
+    vec3.add(inputFrog[1].translation, inputFrog[1].translation, vec3.fromValues(speed0, 0, 0));
+    vec3.add(inputFrog[2].translation, inputFrog[2].translation, vec3.fromValues(speed0, 0, 0));
+    vec3.add(inputFrog[3].translation, inputFrog[3].translation, vec3.fromValues(speed0, 0, 0));
+    vec3.add(inputFrog[4].translation, inputFrog[4].translation, vec3.fromValues(speed0, 0, 0));
     if (inputFrog[1].translation[0] > DISTANCE) {
         inputFrog[1].translation[0] = -DISTANCE;
+    }
+    if (inputFrog[2].translation[0] > DISTANCE) {
+        inputFrog[2].translation[0] = -DISTANCE;
+    }
+    if (inputFrog[3].translation[0] > DISTANCE) {
+        inputFrog[3].translation[0] = -DISTANCE;
+    }
+    if (inputFrog[4].translation[0] > DISTANCE) {
+        inputFrog[4].translation[0] = -DISTANCE;
     }
 
     // Call the game loop again on the next frame
@@ -237,7 +250,7 @@ function handleKeyDown(event) {
         break;
     case 'ArrowUp': // select next ellipsoid
         // highlightModel(modelEnum.ELLIPSOID, (handleKeyDown.whichOn + 1) % numEllipsoids);
-        if (playerPosition.y < 13) {
+        if (playerPosition.y < 11) {
             playerPosition.y += 1;
             vec3.add(inputFrog[0].translation, inputFrog[0].translation, vec3.fromValues(0, STEP_SCALE, 0));
         }
