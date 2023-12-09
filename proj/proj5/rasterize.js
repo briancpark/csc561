@@ -3,31 +3,31 @@
 /* GLOBAL CONSTANTS AND VARIABLES */
 
 /* assignment specific globals */
-let INPUT_FROG_URL = 'attributes/frog.json';
+const INPUT_FROG_URL = 'attributes/frog.json';
 const INPUT_ELLIPSOIDS_URL = 'attributes/ellipsoids.json'; // ellipsoids file loc
-const defaultEye = vec3.fromValues(0.0, 1, -1.0); // default eye position in world space
-const defaultCenter = vec3.fromValues(0.0, 0.9, 0); // default view direction in world space
+const defaultEye = vec3.fromValues(0.1, 0.5, -0.9); // default eye position in world space
+const defaultCenter = vec3.fromValues(0.1, 0.8, 1.0); // default view direction in world space
 const defaultUp = vec3.fromValues(0, 1, 0); // default view up vector
-const lightAmbient = vec3.fromValues(1, 1, 1); // default light ambient emission
+const lightAmbient = vec3.fromValues(0.4, 0.4, 1); // default light ambient emission
 const lightDiffuse = vec3.fromValues(1, 1, 1); // default light diffuse emission
 const lightSpecular = vec3.fromValues(1, 1, 1); // default light specular emission
-const lightPosition = vec3.fromValues(-0.5, 1.5, -0.5); // default light position
+const lightPosition = vec3.fromValues(0.1, 0.5, -1); // default light position
 const rotateTheta = Math.PI / 50; // how much to rotate models by with each key press
 
 /* webgl and geometry data */
 let gl = null; // the all powerful gl object. It's all here folks!
 let inputFrog = []; // the triangle data as loaded from input files
-let inputTrucks = []; // the triangle data as loaded from input files
+const inputTrucks = []; // the triangle data as loaded from input files
 let numTriangleSets = 0; // how many triangle sets in input scene
-let inputEllipsoids = []; // the ellipsoid data as loaded from input files
-let numEllipsoids = 0; // how many ellipsoids in the input scene
+const inputEllipsoids = []; // the ellipsoid data as loaded from input files
+const numEllipsoids = 0; // how many ellipsoids in the input scene
 const vertexBuffers = []; // this contains vertex coordinate lists by set, in triples
 const normalBuffers = []; // this contains normal component lists by set, in triples
 const triSetSizes = []; // this contains the size of each triangle set
 const triangleBuffers = []; // lists of indices into vertexBuffers by set, in triples
-let viewDelta = 0.1; // how much to displace view with each key press
+const viewDelta = 0.1; // how much to displace view with each key press
 
-let replace = true;
+const replace = true;
 const UVBuffer = [];
 const textures = [];
 let textureULoc;
@@ -50,30 +50,75 @@ let Up = vec3.clone(defaultUp); // view up vector in world space
 
 // 14 x 14 grid
 STEP_SCALE = 0.1;
-let playerPosition = { x: 7, y: 0 };
-var DISTANCE = 2.0;
+const playerPosition = {x: 7, y: 0};
+var DISTANCE = 2;
 var speed0 = 0.01;
-function gameLoop() {
-    // Update the x position of the second frog, and wrap around the screen
-    vec3.add(inputFrog[1].translation, inputFrog[1].translation, vec3.fromValues(speed0, 0, 0));
-    vec3.add(inputFrog[2].translation, inputFrog[2].translation, vec3.fromValues(speed0, 0, 0));
-    vec3.add(inputFrog[3].translation, inputFrog[3].translation, vec3.fromValues(speed0, 0, 0));
-    vec3.add(inputFrog[4].translation, inputFrog[4].translation, vec3.fromValues(speed0, 0, 0));
-    if (inputFrog[1].translation[0] > DISTANCE) {
-        inputFrog[1].translation[0] = -DISTANCE;
-    }
-    if (inputFrog[2].translation[0] > DISTANCE) {
-        inputFrog[2].translation[0] = -DISTANCE;
-    }
-    if (inputFrog[3].translation[0] > DISTANCE) {
-        inputFrog[3].translation[0] = -DISTANCE;
-    }
-    if (inputFrog[4].translation[0] > DISTANCE) {
-        inputFrog[4].translation[0] = -DISTANCE;
-    }
+var speed1 = 0.02;
+let lastTime = 0;
+const fpsInterval = 1000 / 30; // 30 FPS
 
-    // Call the game loop again on the next frame
+walls = [
+    {x: 1, y: 11},
+    {x: 2, y: 11},
+    {x: 5, y: 11},
+    {x: 8, y: 11},
+    {x: 11, y: 11},
+    {x: 12, y: 11},
+];
+
+
+function gameLoop(time) {
+    // Call the game loop again on the next frame at a rate of 60 frames per second
     requestAnimationFrame(gameLoop);
+    const elapsed = time - lastTime;
+    if (elapsed > fpsInterval) {
+        lastTime = time - (elapsed % fpsInterval);
+
+        // Update the x position of the second frog, and wrap around the screen
+        vec3.add(inputFrog[1].translation, inputFrog[1].translation, vec3.fromValues(speed0, 0, 0));
+        vec3.add(inputFrog[2].translation, inputFrog[2].translation, vec3.fromValues(speed0, 0, 0));
+        vec3.add(inputFrog[3].translation, inputFrog[3].translation, vec3.fromValues(speed0, 0, 0));
+        vec3.add(inputFrog[4].translation, inputFrog[4].translation, vec3.fromValues(speed0, 0, 0));
+
+        vec3.add(inputFrog[5].translation, inputFrog[5].translation, vec3.fromValues(-speed1, 0, 0));
+        vec3.add(inputFrog[6].translation, inputFrog[6].translation, vec3.fromValues(-speed1, 0, 0));
+        vec3.add(inputFrog[7].translation, inputFrog[7].translation, vec3.fromValues(-speed1, 0, 0));
+        vec3.add(inputFrog[8].translation, inputFrog[8].translation, vec3.fromValues(-speed1, 0, 0));
+        if (inputFrog[1].translation[0] > DISTANCE) {
+            inputFrog[1].translation[0] = -DISTANCE;
+        }
+        if (inputFrog[2].translation[0] > DISTANCE) {
+            inputFrog[2].translation[0] = -DISTANCE;
+        }
+        if (inputFrog[3].translation[0] > DISTANCE) {
+            inputFrog[3].translation[0] = -DISTANCE;
+        }
+        if (inputFrog[4].translation[0] > DISTANCE) {
+            inputFrog[4].translation[0] = -DISTANCE;
+        }
+
+        if (inputFrog[5].translation[0] < -DISTANCE) {
+            inputFrog[5].translation[0] = DISTANCE;
+        }
+        if (inputFrog[6].translation[0] < -DISTANCE) {
+            inputFrog[6].translation[0] = DISTANCE;
+        }
+        if (inputFrog[7].translation[0] < -DISTANCE) {
+            inputFrog[7].translation[0] = DISTANCE;
+        }
+        if (inputFrog[8].translation[0] < -DISTANCE) {
+            inputFrog[8].translation[0] = DISTANCE;
+        }
+    }
+}
+
+function nextPosHitWall(x, y) {
+    for (var i = 0; i < walls.length; i++) {
+        if (walls[i].x == x && walls[i].y == y) {
+            return true;
+        }
+    }
+    return false;
 }
 
 
@@ -136,9 +181,6 @@ function loadTexture(gl, url) {
             image,
         );
 
-        // WebGL1 has different requirements for power of 2 images
-        // vs. non power of 2 images so check if the image is a
-        // power of 2 in both dimensions.
         if (((image.width & (image.width - 1)) === 0) && ((image.width & (image.width - 1)) === 0)) {
             gl.generateMipmap(gl.TEXTURE_2D);
         } else {
@@ -235,33 +277,32 @@ function handleKeyDown(event) {
         break;
     case 'ArrowRight': // select next triangle set
         // update the frog's position
-        if (playerPosition.x < 13) {
+        if (playerPosition.x < 13 && !nextPosHitWall(playerPosition.x + 1, playerPosition.y)) {
             playerPosition.x += 1;
             vec3.add(inputFrog[0].translation, inputFrog[0].translation, vec3.fromValues(-STEP_SCALE, 0, 0));
         }
-        // highlightModel(modelEnum.TRIANGLES, (handleKeyDown.whichOn + 1) % numTriangleSets);
+
         break;
     case 'ArrowLeft': // select previous triangle set
-        // highlightModel(modelEnum.TRIANGLES, (handleKeyDown.whichOn > 0) ? handleKeyDown.whichOn - 1 : numTriangleSets - 1);
-        if (playerPosition.x > 0) {
+
+        if (playerPosition.x > 0 && !nextPosHitWall(playerPosition.x - 1, playerPosition.y)) {
             playerPosition.x -= 1;
             vec3.add(inputFrog[0].translation, inputFrog[0].translation, vec3.fromValues(STEP_SCALE, 0, 0));
         }
         break;
     case 'ArrowUp': // select next ellipsoid
-        // highlightModel(modelEnum.ELLIPSOID, (handleKeyDown.whichOn + 1) % numEllipsoids);
-        if (playerPosition.y < 11) {
+
+        if (playerPosition.y < 11 && !nextPosHitWall(playerPosition.x, playerPosition.y + 1)) {
             playerPosition.y += 1;
             vec3.add(inputFrog[0].translation, inputFrog[0].translation, vec3.fromValues(0, STEP_SCALE, 0));
         }
 
         break;
     case 'ArrowDown': // select previous ellipsoid
-        // highlightModel(modelEnum.ELLIPSOID, (handleKeyDown.whichOn > 0) ? handleKeyDown.whichOn - 1 : numEllipsoids - 1);
-        if (playerPosition.y > 0) {
+
+        if (playerPosition.y > 0 && !nextPosHitWall(playerPosition.x, playerPosition.y - 1)) {
             playerPosition.y -= 1;
             vec3.add(inputFrog[0].translation, inputFrog[0].translation, vec3.fromValues(0, -STEP_SCALE, 0));
-
         }
         break;
 
@@ -317,65 +358,6 @@ function handleKeyDown(event) {
         Center = vec3.copy(Center, defaultCenter);
         Up = vec3.copy(Up, defaultUp);
         break;
-
-        // model transformation
-    case 'KeyK': // translate left, rotate left with shift
-        if (event.getModifierState('Shift')) {
-            rotateModel(Up, dirEnum.NEGATIVE);
-        } else {
-            translateModel(vec3.scale(temp, viewRight, viewDelta));
-        }
-        break;
-    case 'Semicolon': // translate right, rotate right with shift
-        if (event.getModifierState('Shift')) {
-            rotateModel(Up, dirEnum.POSITIVE);
-        } else {
-            translateModel(vec3.scale(temp, viewRight, -viewDelta));
-        }
-        break;
-    case 'KeyL': // translate backward, rotate up with shift
-        if (event.getModifierState('Shift')) {
-            rotateModel(viewRight, dirEnum.POSITIVE);
-        } else {
-            translateModel(vec3.scale(temp, lookAt, -viewDelta));
-        }
-        break;
-    case 'KeyO': // translate forward, rotate down with shift
-        if (event.getModifierState('Shift')) {
-            rotateModel(viewRight, dirEnum.NEGATIVE);
-        } else {
-            translateModel(vec3.scale(temp, lookAt, viewDelta));
-        }
-        break;
-    case 'KeyI': // translate up, rotate counterclockwise with shift
-        if (event.getModifierState('Shift')) {
-            rotateModel(lookAt, dirEnum.POSITIVE);
-        } else {
-            translateModel(vec3.scale(temp, Up, viewDelta));
-        }
-        break;
-    case 'KeyP': // translate down, rotate clockwise with shift
-        if (event.getModifierState('Shift')) {
-            rotateModel(lookAt, dirEnum.NEGATIVE);
-        } else {
-            translateModel(vec3.scale(temp, Up, -viewDelta));
-        }
-        break;
-    case 'KeyB':
-        replace = !replace;
-        break;
-    case 'Backspace': // reset model transforms to default
-        for (var whichTriSet = 0; whichTriSet < numTriangleSets; whichTriSet++) {
-            vec3.set(inputFrog[whichTriSet].translation, 0, 0, 0);
-            vec3.set(inputFrog[whichTriSet].xAxis, 1, 0, 0);
-            vec3.set(inputFrog[whichTriSet].yAxis, 0, 1, 0);
-        }
-        for (let whichEllipsoid = 0; whichEllipsoid < numEllipsoids; whichEllipsoid++) {
-            vec3.set(inputEllipsoids[whichEllipsoid].translation, 0, 0, 0);
-            vec3.set(inputEllipsoids[whichTriSet].xAxis, 1, 0, 0);
-            vec3.set(inputEllipsoids[whichTriSet].yAxis, 0, 1, 0);
-        }
-        break;
     }
 }
 
@@ -383,7 +365,7 @@ function handleKeyDown(event) {
 function setupWebGL() {
     // Set up keys
     document.onkeydown = handleKeyDown; // call this when key pressed
-    
+
     // Get the canvas and context
     const canvas = document.getElementById('myWebGLCanvas'); // create a js canvas
     gl = canvas.getContext('webgl'); // get a webgl object from it
@@ -545,7 +527,7 @@ function loadModels() {
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, triangleBuffers[whichSet]); // activate that buffer
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(inputFrog[whichSet].glTriangles), gl.STATIC_DRAW); // data in
     } // end for each triangle set
-} 
+}
 
 // setup the webGL shaders
 function setupShaders() {
@@ -858,5 +840,5 @@ function main() {
     setupShaders(); // setup the webGL shaders
     renderModels(); // draw the triangles using webGL
     // Start the game loop
-gameLoop();
+    gameLoop();
 } // end main
