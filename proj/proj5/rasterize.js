@@ -110,6 +110,18 @@ function initEnemies() {
     inputFrog[27].translation = vec3.fromValues(-0.5, 0, 0);
     inputFrog[28].translation = vec3.fromValues(-0.0, 0, 0);
     inputFrog[29].translation = vec3.fromValues(0.5, 0, 0);
+
+    inputFrog[30].translation = vec3.fromValues(0.0, 0, 0);
+
+    inputFrog[31].translation = vec3.fromValues(0.0, 0, 0);
+    inputFrog[32].translation = vec3.fromValues(0.1, 0, 0);
+    inputFrog[33].translation = vec3.fromValues(0.3, 0, 0);
+    inputFrog[34].translation = vec3.fromValues(0.4, 0, 0);
+    inputFrog[35].translation = vec3.fromValues(0.6, 0, 0);
+    inputFrog[36].translation = vec3.fromValues(0.7, 0, 0);
+
+    inputFrog[37].translation = vec3.fromValues(0.0, 0, 0);
+    inputFrog[38].translation = vec3.fromValues(0.8, 0, 0);
 }
 
 function gameLoop(time) {
@@ -162,6 +174,19 @@ function gameLoop(time) {
 
         // big log
         vec3.add(inputFrog[30].translation, inputFrog[30].translation, vec3.fromValues(-speed3, 0, 0));
+
+        // turtles 2
+        vec3.add(inputFrog[31].translation, inputFrog[31].translation, vec3.fromValues(speed1, 0, 0));
+        vec3.add(inputFrog[32].translation, inputFrog[32].translation, vec3.fromValues(speed1, 0, 0));
+        vec3.add(inputFrog[33].translation, inputFrog[33].translation, vec3.fromValues(speed1, 0, 0));
+        vec3.add(inputFrog[34].translation, inputFrog[34].translation, vec3.fromValues(speed1, 0, 0));
+        vec3.add(inputFrog[35].translation, inputFrog[35].translation, vec3.fromValues(speed1, 0, 0));
+        vec3.add(inputFrog[36].translation, inputFrog[36].translation, vec3.fromValues(speed1, 0, 0));
+
+        // big logs 2
+        vec3.add(inputFrog[37].translation, inputFrog[37].translation, vec3.fromValues(-speed2, 0, 0));
+        vec3.add(inputFrog[38].translation, inputFrog[38].translation, vec3.fromValues(-speed2, 0, 0));
+
 
         if (inputFrog[1].translation[0] > DISTANCE) {
             inputFrog[1].translation[0] = -DISTANCE;
@@ -258,6 +283,32 @@ function gameLoop(time) {
 
         if (inputFrog[30].translation[0] < -DISTANCE) {
             inputFrog[30].translation[0] = DISTANCE;
+        }
+
+        if (inputFrog[31].translation[0] > DISTANCE) {
+            inputFrog[31].translation[0] = -DISTANCE;
+        }
+        if (inputFrog[32].translation[0] > DISTANCE) {
+            inputFrog[32].translation[0] = -DISTANCE;
+        }
+        if (inputFrog[33].translation[0] > DISTANCE) {
+            inputFrog[33].translation[0] = -DISTANCE;
+        }
+        if (inputFrog[34].translation[0] > DISTANCE) {
+            inputFrog[34].translation[0] = -DISTANCE;
+        }
+        if (inputFrog[35].translation[0] > DISTANCE) {
+            inputFrog[35].translation[0] = -DISTANCE;
+        }
+        if (inputFrog[36].translation[0] > DISTANCE) {
+            inputFrog[36].translation[0] = -DISTANCE;
+        }
+
+        if (inputFrog[37].translation[0] > DISTANCE) {
+            inputFrog[37].translation[0] = -DISTANCE;
+        }
+        if (inputFrog[38].translation[0] < -DISTANCE) {
+            inputFrog[38].translation[0] = DISTANCE;
         }
     }
 }
