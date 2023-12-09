@@ -51,7 +51,7 @@ let Up = vec3.clone(defaultUp); // view up vector in world space
 // 14 x 14 grid
 STEP_SCALE = 0.1;
 const playerPosition = {x: 7, y: 0};
-var DISTANCE = 0.8;
+var DISTANCE = 1.4;
 var speed0 = 0.01;
 var speed1 = 0.005;
 var speed2 = 0.0025;
@@ -106,6 +106,10 @@ function initEnemies() {
     inputFrog[24].translation = vec3.fromValues(0.6, 0, 0);
     inputFrog[25].translation = vec3.fromValues(0.7, 0, 0);
     inputFrog[26].translation = vec3.fromValues(0.8, 0, 0);
+
+    inputFrog[27].translation = vec3.fromValues(-0.5, 0, 0);
+    inputFrog[28].translation = vec3.fromValues(-0.0, 0, 0);
+    inputFrog[29].translation = vec3.fromValues(0.5, 0, 0);
 }
 
 function gameLoop(time) {
@@ -149,6 +153,15 @@ function gameLoop(time) {
         vec3.add(inputFrog[24].translation, inputFrog[24].translation, vec3.fromValues(speed0, 0, 0));
         vec3.add(inputFrog[25].translation, inputFrog[25].translation, vec3.fromValues(speed0, 0, 0));
         vec3.add(inputFrog[26].translation, inputFrog[26].translation, vec3.fromValues(speed0, 0, 0));
+
+
+        // logs
+        vec3.add(inputFrog[27].translation, inputFrog[27].translation, vec3.fromValues(-speed0, 0, 0));
+        vec3.add(inputFrog[28].translation, inputFrog[28].translation, vec3.fromValues(-speed0, 0, 0));
+        vec3.add(inputFrog[29].translation, inputFrog[29].translation, vec3.fromValues(-speed0, 0, 0));
+
+        // big log
+        vec3.add(inputFrog[30].translation, inputFrog[30].translation, vec3.fromValues(-speed3, 0, 0));
 
         if (inputFrog[1].translation[0] > DISTANCE) {
             inputFrog[1].translation[0] = -DISTANCE;
@@ -232,6 +245,19 @@ function gameLoop(time) {
         }
         if (inputFrog[26].translation[0] > DISTANCE) {
             inputFrog[26].translation[0] = -DISTANCE;
+        }
+        if (inputFrog[27].translation[0] < -DISTANCE) {
+            inputFrog[27].translation[0] = DISTANCE;
+        }
+        if (inputFrog[28].translation[0] < -DISTANCE) {
+            inputFrog[28].translation[0] = DISTANCE;
+        }
+        if (inputFrog[29].translation[0] < -DISTANCE) {
+            inputFrog[29].translation[0] = DISTANCE;
+        }
+
+        if (inputFrog[30].translation[0] < -DISTANCE) {
+            inputFrog[30].translation[0] = DISTANCE;
         }
     }
 }
