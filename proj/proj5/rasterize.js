@@ -3,9 +3,10 @@
 /* GLOBAL CONSTANTS AND VARIABLES */
 
 /* assignment specific globals */
-let INPUT_TRIANGLES_URL = 'attributes/triangles.json'; // triangles file loc
+let INPUT_FROG_URL = 'attributes/frog.json';
+let INPUT_TRUCK_URL = 'attributes/truck.json';
 const INPUT_ELLIPSOIDS_URL = 'attributes/ellipsoids.json'; // ellipsoids file loc
-const defaultEye = vec3.fromValues(0.5, 0.5, -0.5); // default eye position in world space
+const defaultEye = vec3.fromValues(0.5, 0.5, -1.5); // default eye position in world space
 const defaultCenter = vec3.fromValues(0.5, 0.5, 0.5); // default view direction in world space
 const defaultUp = vec3.fromValues(0, 1, 0); // default view up vector
 const lightAmbient = vec3.fromValues(1, 1, 1); // default light ambient emission
@@ -16,7 +17,8 @@ const rotateTheta = Math.PI / 50; // how much to rotate models by with each key 
 
 /* webgl and geometry data */
 let gl = null; // the all powerful gl object. It's all here folks!
-let inputTriangles = []; // the triangle data as loaded from input files
+let inputFrog = []; // the triangle data as loaded from input files
+let inputTrucks = []; // the triangle data as loaded from input files
 let numTriangleSets = 0; // how many triangle sets in input scene
 let inputEllipsoids = []; // the ellipsoid data as loaded from input files
 let numEllipsoids = 0; // how many ellipsoids in the input scene
@@ -46,6 +48,39 @@ let shininessULoc; // where to put specular exponent for fragment shader
 let Eye = vec3.clone(defaultEye); // eye position in world space
 let Center = vec3.clone(defaultCenter); // view direction in world space
 let Up = vec3.clone(defaultUp); // view up vector in world space
+
+// 14 x 14 grid
+let playerPosition = { x: 7, y: 0 };
+
+// arrow keys for movement, make sure to check if the player is in bounds
+function handleKeyDown(event) {
+    switch (event.code) {
+    case 'ArrowUp':
+        if (playerPosition.y < 13) {
+            playerPosition.y++;
+        }
+        break;
+    case 'ArrowDown':
+        if (playerPosition.y > 0) {
+            playerPosition.y--;
+        }
+        break;
+    case 'ArrowLeft':
+        if (playerPosition.x > 0) {
+            playerPosition.x--;
+        }
+        break;
+    case 'ArrowRight':
+        if (playerPosition.x < 13) {
+            playerPosition.x++;
+        }
+        break;
+
+    default:
+        break;
+    }        
+}
+
 
 // ASSIGNMENT HELPER FUNCTIONS
 
@@ -109,12 +144,9 @@ function loadTexture(gl, url) {
         // WebGL1 has different requirements for power of 2 images
         // vs. non power of 2 images so check if the image is a
         // power of 2 in both dimensions.
-        if (isPowerOf2(image.width) && isPowerOf2(image.height)) {
-            // Yes, it's a power of 2. Generate mips.
+        if (((image.width & (image.width - 1)) === 0) && ((image.width & (image.width - 1)) === 0)) {
             gl.generateMipmap(gl.TEXTURE_2D);
         } else {
-            // No, it's not a power of 2. Turn off mips and set
-            // wrapping to clamp to edge
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
@@ -123,10 +155,6 @@ function loadTexture(gl, url) {
     image.src = url;
 
     return texture;
-}
-
-function isPowerOf2(value) {
-    return (value & (value - 1)) === 0;
 }
 
 // get the JSON file from the passed URL
@@ -167,7 +195,7 @@ function handleKeyDown(event) {
         }
         handleKeyDown.whichOn = whichModel;
         if (modelType == modelEnum.TRIANGLES) {
-            handleKeyDown.modelOn = inputTriangles[whichModel];
+            handleKeyDown.modelOn = inputFrog[whichModel];
         } else {
             handleKeyDown.modelOn = inputEllipsoids[whichModel];
         }
@@ -322,23 +350,11 @@ function handleKeyDown(event) {
     case 'KeyB':
         replace = !replace;
         break;
-    case 'Digit1':
-        if (event.getModifierState('Shift')) {
-            // reset everythign and rerender everything with attributes/teapot.json
-            gl = null;
-            inputTriangles = getJSONFile('attributes/triangles2.json', 'triangles2'); // read in the triangle data
-            INPUT_TRIANGLES_URL = 'attributes/triangles2.json';
-            setupWebGL(); // set up the webGL environment
-            loadModels(); // load in the models from tri file
-            setupShaders(); // setup the webGL shaders
-            renderModels(); // draw the triangles using webGL
-        }
-        break;
     case 'Backspace': // reset model transforms to default
         for (var whichTriSet = 0; whichTriSet < numTriangleSets; whichTriSet++) {
-            vec3.set(inputTriangles[whichTriSet].translation, 0, 0, 0);
-            vec3.set(inputTriangles[whichTriSet].xAxis, 1, 0, 0);
-            vec3.set(inputTriangles[whichTriSet].yAxis, 0, 1, 0);
+            vec3.set(inputFrog[whichTriSet].translation, 0, 0, 0);
+            vec3.set(inputFrog[whichTriSet].xAxis, 1, 0, 0);
+            vec3.set(inputFrog[whichTriSet].yAxis, 0, 1, 0);
         }
         for (let whichEllipsoid = 0; whichEllipsoid < numEllipsoids; whichEllipsoid++) {
             vec3.set(inputEllipsoids[whichEllipsoid].translation, 0, 0, 0);
@@ -353,22 +369,7 @@ function handleKeyDown(event) {
 function setupWebGL() {
     // Set up keys
     document.onkeydown = handleKeyDown; // call this when key pressed
-
-
-    const imageCanvas = document.getElementById('myImageCanvas'); // create a 2d canvas
-    const cw = imageCanvas.width;
-    const ch = imageCanvas.height;
-    imageContext = imageCanvas.getContext('2d');
-    const bkgdImage = new Image();
-    bkgdImage.crossOrigin = 'Anonymous';
-    bkgdImage.src = 'attributes/sky.jpg';
-    bkgdImage.onload = function() {
-        const iw = bkgdImage.width;
-        const ih = bkgdImage.height;
-        imageContext.drawImage(bkgdImage, 0, 0, iw, ih, 0, 0, cw, ch);
-    };
-
-
+    
     // Get the canvas and context
     const canvas = document.getElementById('myWebGLCanvas'); // create a js canvas
     gl = canvas.getContext('webgl'); // get a webgl object from it
@@ -377,6 +378,7 @@ function setupWebGL() {
         if (gl == null) {
             throw 'unable to create gl context -- is your browser gl ready?';
         } else {
+            gl.clearColor(0.0, 0.0, 0.0, 1.0);
             gl.clearDepth(1.0); // use max when we clear the depth buffer
             gl.enable(gl.DEPTH_TEST); // use hidden surface removal (with zbuffering)
         }
@@ -464,127 +466,183 @@ function loadModels() {
         }
     }
 
-    inputTriangles = getJSONFile(INPUT_TRIANGLES_URL, 'triangles'); // read in the triangle data
+    inputFrog = getJSONFile(INPUT_FROG_URL, 'frog'); // read in the triangle data
 
-    try {
-        if (inputTriangles == String.null) {
-            throw 'Unable to load triangles file!';
-        } else {
-            let whichSetVert; // index of vertex in current triangle set
-            let whichSetTri; // index of triangle in current triangle set
-            let vtxToAdd; // vtx coords to add to the coord array
-            let normToAdd; // vtx normal to add to the coord array
-            let triToAdd; // tri indices to add to the index array
-            const maxCorner = vec3.fromValues(Number.MIN_VALUE, Number.MIN_VALUE, Number.MIN_VALUE); // bbox corner
-            const minCorner = vec3.fromValues(Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE); // other corner
+    let whichSetVert; // index of vertex in current triangle set
+    let whichSetTri; // index of triangle in current triangle set
+    let vtxToAdd; // vtx coords to add to the coord array
+    let normToAdd; // vtx normal to add to the coord array
+    let triToAdd; // tri indices to add to the index array
+    const maxCorner = vec3.fromValues(Number.MIN_VALUE, Number.MIN_VALUE, Number.MIN_VALUE); // bbox corner
+    const minCorner = vec3.fromValues(Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE); // other corner
 
-            // process each triangle set to load webgl vertex and triangle buffers
-            numTriangleSets = inputTriangles.length; // remember how many tri sets
-            for (let whichSet = 0; whichSet < numTriangleSets; whichSet++) { // for each tri set
-                // set up hilighting, modeling translation and rotation
-                inputTriangles[whichSet].center = vec3.fromValues(0, 0, 0); // center point of tri set
-                inputTriangles[whichSet].on = false; // not highlighted
-                inputTriangles[whichSet].translation = vec3.fromValues(0, 0, 0); // no translation
-                inputTriangles[whichSet].xAxis = vec3.fromValues(1, 0, 0); // model X axis
-                inputTriangles[whichSet].yAxis = vec3.fromValues(0, 1, 0); // model Y axis
+    // process each triangle set to load webgl vertex and triangle buffers
+    numTriangleSets = inputFrog.length; // remember how many tri sets
+    for (let whichSet = 0; whichSet < numTriangleSets; whichSet++) { // for each tri set
+        // set up hilighting, modeling translation and rotation
+        inputFrog[whichSet].center = vec3.fromValues(0, 0, 0); // center point of tri set
+        inputFrog[whichSet].on = false; // not highlighted
+        inputFrog[whichSet].translation = vec3.fromValues(0, 0, 0); // no translation
+        inputFrog[whichSet].xAxis = vec3.fromValues(1, 0, 0); // model X axis
+        inputFrog[whichSet].yAxis = vec3.fromValues(0, 1, 0); // model Y axis
 
-                textures[whichSet] = loadTexture(gl, 'attributes/' + inputTriangles[whichSet].material.texture);
+        textures[whichSet] = loadTexture(gl, 'attributes/' + inputFrog[whichSet].material.texture);
 
-                // set up the vertex and normal arrays, define model center and axes
-                inputTriangles[whichSet].glVertices = []; // flat coord list for webgl
-                inputTriangles[whichSet].glNormals = []; // flat normal list for webgl
-                inputTriangles[whichSet].glUVs = [];
-                const numVerts = inputTriangles[whichSet].vertices.length; // num vertices in tri set
-                for (whichSetVert = 0; whichSetVert < numVerts; whichSetVert++) { // verts in set
-                    vtxToAdd = inputTriangles[whichSet].vertices[whichSetVert]; // get vertex to add
-                    normToAdd = inputTriangles[whichSet].normals[whichSetVert]; // get normal to add
-                    uvsToAdd = inputTriangles[whichSet].uvs[whichSetVert];
-                    inputTriangles[whichSet].glVertices.push(vtxToAdd[0], vtxToAdd[1], vtxToAdd[2]); // put coords in set coord list
-                    inputTriangles[whichSet].glNormals.push(normToAdd[0], normToAdd[1], normToAdd[2]); // put normal in set coord list
-                    inputTriangles[whichSet].glUVs.push(uvsToAdd[0], uvsToAdd[1]);
-                    vec3.max(maxCorner, maxCorner, vtxToAdd); // update world bounding box corner maxima
-                    vec3.min(minCorner, minCorner, vtxToAdd); // update world bounding box corner minima
-                    vec3.add(inputTriangles[whichSet].center, inputTriangles[whichSet].center, vtxToAdd); // add to ctr sum
-                } // end for vertices in set
-                vec3.scale(inputTriangles[whichSet].center, inputTriangles[whichSet].center, 1 / numVerts); // avg ctr sum
+        // set up the vertex and normal arrays, define model center and axes
+        inputFrog[whichSet].glVertices = []; // flat coord list for webgl
+        inputFrog[whichSet].glNormals = []; // flat normal list for webgl
+        inputFrog[whichSet].glUVs = [];
+        const numVerts = inputFrog[whichSet].vertices.length; // num vertices in tri set
+        for (whichSetVert = 0; whichSetVert < numVerts; whichSetVert++) { // verts in set
+            vtxToAdd = inputFrog[whichSet].vertices[whichSetVert]; // get vertex to add
+            normToAdd = inputFrog[whichSet].normals[whichSetVert]; // get normal to add
+            uvsToAdd = inputFrog[whichSet].uvs[whichSetVert];
+            inputFrog[whichSet].glVertices.push(vtxToAdd[0], vtxToAdd[1], vtxToAdd[2]); // put coords in set coord list
+            inputFrog[whichSet].glNormals.push(normToAdd[0], normToAdd[1], normToAdd[2]); // put normal in set coord list
+            inputFrog[whichSet].glUVs.push(uvsToAdd[0], uvsToAdd[1]);
+            vec3.max(maxCorner, maxCorner, vtxToAdd); // update world bounding box corner maxima
+            vec3.min(minCorner, minCorner, vtxToAdd); // update world bounding box corner minima
+            vec3.add(inputFrog[whichSet].center, inputFrog[whichSet].center, vtxToAdd); // add to ctr sum
+        } // end for vertices in set
+        vec3.scale(inputFrog[whichSet].center, inputFrog[whichSet].center, 1 / numVerts); // avg ctr sum
 
-                // send the vertex coords and normals to webGL
-                vertexBuffers[whichSet] = gl.createBuffer(); // init empty webgl set vertex coord buffer
-                gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffers[whichSet]); // activate that buffer
-                gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(inputTriangles[whichSet].glVertices), gl.STATIC_DRAW); // data in
-                normalBuffers[whichSet] = gl.createBuffer(); // init empty webgl set normal component buffer
-                gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffers[whichSet]); // activate that buffer
-                gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(inputTriangles[whichSet].glNormals), gl.STATIC_DRAW); // data in
+        // send the vertex coords and normals to webGL
+        vertexBuffers[whichSet] = gl.createBuffer(); // init empty webgl set vertex coord buffer
+        gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffers[whichSet]); // activate that buffer
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(inputFrog[whichSet].glVertices), gl.STATIC_DRAW); // data in
+        normalBuffers[whichSet] = gl.createBuffer(); // init empty webgl set normal component buffer
+        gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffers[whichSet]); // activate that buffer
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(inputFrog[whichSet].glNormals), gl.STATIC_DRAW); // data in
 
-                UVBuffer[whichSet] = gl.createBuffer();
-                gl.bindBuffer(gl.ARRAY_BUFFER, UVBuffer[whichSet]);
-                gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(inputTriangles[whichSet].glUVs), gl.STATIC_DRAW);
+        UVBuffer[whichSet] = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, UVBuffer[whichSet]);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(inputFrog[whichSet].glUVs), gl.STATIC_DRAW);
 
-                // set up the triangle index array, adjusting indices across sets
-                inputTriangles[whichSet].glTriangles = []; // flat index list for webgl
-                triSetSizes[whichSet] = inputTriangles[whichSet].triangles.length; // number of tris in this set
-                for (whichSetTri = 0; whichSetTri < triSetSizes[whichSet]; whichSetTri++) {
-                    triToAdd = inputTriangles[whichSet].triangles[whichSetTri]; // get tri to add
-                    inputTriangles[whichSet].glTriangles.push(triToAdd[0], triToAdd[1], triToAdd[2]); // put indices in set list
-                } // end for triangles in set
+        // set up the triangle index array, adjusting indices across sets
+        inputFrog[whichSet].glTriangles = []; // flat index list for webgl
+        triSetSizes[whichSet] = inputFrog[whichSet].triangles.length; // number of tris in this set
+        for (whichSetTri = 0; whichSetTri < triSetSizes[whichSet]; whichSetTri++) {
+            triToAdd = inputFrog[whichSet].triangles[whichSetTri]; // get tri to add
+            inputFrog[whichSet].glTriangles.push(triToAdd[0], triToAdd[1], triToAdd[2]); // put indices in set list
+        } // end for triangles in set
 
-                // send the triangle indices to webGL
-                triangleBuffers.push(gl.createBuffer()); // init empty triangle index buffer
-                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, triangleBuffers[whichSet]); // activate that buffer
-                gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(inputTriangles[whichSet].glTriangles), gl.STATIC_DRAW); // data in
-            } // end for each triangle set
+        // send the triangle indices to webGL
+        triangleBuffers.push(gl.createBuffer()); // init empty triangle index buffer
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, triangleBuffers[whichSet]); // activate that buffer
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(inputFrog[whichSet].glTriangles), gl.STATIC_DRAW); // data in
+    } // end for each triangle set
+    
+    // inputFrog = getJSONFile(INPUT_TRUCK_URL, 'trucks'); // read in the triangle data
 
-            inputEllipsoids = getJSONFile(INPUT_ELLIPSOIDS_URL, 'ellipsoids'); // read in the ellipsoids
+    // let whichSetVert; // index of vertex in current triangle set
+    // let whichSetTri; // index of triangle in current triangle set
+    // let vtxToAdd; // vtx coords to add to the coord array
+    // let normToAdd; // vtx normal to add to the coord array
+    // let triToAdd; // tri indices to add to the index array
+    // const maxCorner = vec3.fromValues(Number.MIN_VALUE, Number.MIN_VALUE, Number.MIN_VALUE); // bbox corner
+    // const minCorner = vec3.fromValues(Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE); // other corner
 
-            if (inputEllipsoids == String.null) {
-                throw 'Unable to load ellipsoids file!';
-            } else {
-                // init ellipsoid highlighting, translation and rotation; update bbox
-                let ellipsoid; // current ellipsoid
-                let ellipsoidModel; // current ellipsoid triangular model
-                const temp = vec3.create(); // an intermediate vec3
-                const minXYZ = vec3.create();
-                const maxXYZ = vec3.create(); // min/max xyz from ellipsoid
-                numEllipsoids = inputEllipsoids.length; // remember how many ellipsoids
-                for (let whichEllipsoid = 0; whichEllipsoid < numEllipsoids; whichEllipsoid++) {
-                    // set up various stats and transforms for this ellipsoid
-                    ellipsoid = inputEllipsoids[whichEllipsoid];
-                    ellipsoid.on = false; // ellipsoids begin without highlight
-                    ellipsoid.translation = vec3.fromValues(0, 0, 0); // ellipsoids begin without translation
-                    ellipsoid.xAxis = vec3.fromValues(1, 0, 0); // ellipsoid X axis
-                    ellipsoid.yAxis = vec3.fromValues(0, 1, 0); // ellipsoid Y axis
-                    ellipsoid.center = vec3.fromValues(ellipsoid.x, ellipsoid.y, ellipsoid.z); // locate ellipsoid ctr
-                    vec3.set(minXYZ, ellipsoid.x - ellipsoid.a, ellipsoid.y - ellipsoid.b, ellipsoid.z - ellipsoid.c);
-                    vec3.set(maxXYZ, ellipsoid.x + ellipsoid.a, ellipsoid.y + ellipsoid.b, ellipsoid.z + ellipsoid.c);
-                    vec3.min(minCorner, minCorner, minXYZ); // update world bbox min corner
-                    vec3.max(maxCorner, maxCorner, maxXYZ); // update world bbox max corner
+    // // process each triangle set to load webgl vertex and triangle buffers
+    // numTriangleSets = inputFrog.length; // remember how many tri sets
+    // for (let whichSet = 0; whichSet < numTriangleSets; whichSet++) { // for each tri set
+    //     // set up hilighting, modeling translation and rotation
+    //     inputFrog[whichSet].center = vec3.fromValues(0, 0, 0); // center point of tri set
+    //     inputFrog[whichSet].on = false; // not highlighted
+    //     inputFrog[whichSet].translation = vec3.fromValues(0, 0, 0); // no translation
+    //     inputFrog[whichSet].xAxis = vec3.fromValues(1, 0, 0); // model X axis
+    //     inputFrog[whichSet].yAxis = vec3.fromValues(0, 1, 0); // model Y axis
 
-                    // make the ellipsoid model
-                    ellipsoidModel = makeEllipsoid(ellipsoid, 32);
+    //     textures[whichSet] = loadTexture(gl, 'attributes/' + inputFrog[whichSet].material.texture);
 
-                    // send the ellipsoid vertex coords and normals to webGL
-                    vertexBuffers.push(gl.createBuffer()); // init empty webgl ellipsoid vertex coord buffer
-                    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffers[vertexBuffers.length - 1]); // activate that buffer
-                    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(ellipsoidModel.vertices), gl.STATIC_DRAW); // data in
-                    normalBuffers.push(gl.createBuffer()); // init empty webgl ellipsoid vertex normal buffer
-                    gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffers[normalBuffers.length - 1]); // activate that buffer
-                    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(ellipsoidModel.normals), gl.STATIC_DRAW); // data in
+    //     // set up the vertex and normal arrays, define model center and axes
+    //     inputFrog[whichSet].glVertices = []; // flat coord list for webgl
+    //     inputFrog[whichSet].glNormals = []; // flat normal list for webgl
+    //     inputFrog[whichSet].glUVs = [];
+    //     const numVerts = inputFrog[whichSet].vertices.length; // num vertices in tri set
+    //     for (whichSetVert = 0; whichSetVert < numVerts; whichSetVert++) { // verts in set
+    //         vtxToAdd = inputFrog[whichSet].vertices[whichSetVert]; // get vertex to add
+    //         normToAdd = inputFrog[whichSet].normals[whichSetVert]; // get normal to add
+    //         uvsToAdd = inputFrog[whichSet].uvs[whichSetVert];
+    //         inputFrog[whichSet].glVertices.push(vtxToAdd[0], vtxToAdd[1], vtxToAdd[2]); // put coords in set coord list
+    //         inputFrog[whichSet].glNormals.push(normToAdd[0], normToAdd[1], normToAdd[2]); // put normal in set coord list
+    //         inputFrog[whichSet].glUVs.push(uvsToAdd[0], uvsToAdd[1]);
+    //         vec3.max(maxCorner, maxCorner, vtxToAdd); // update world bounding box corner maxima
+    //         vec3.min(minCorner, minCorner, vtxToAdd); // update world bounding box corner minima
+    //         vec3.add(inputFrog[whichSet].center, inputFrog[whichSet].center, vtxToAdd); // add to ctr sum
+    //     } // end for vertices in set
+    //     vec3.scale(inputFrog[whichSet].center, inputFrog[whichSet].center, 1 / numVerts); // avg ctr sum
 
-                    triSetSizes.push(ellipsoidModel.triangles.length);
+    //     // send the vertex coords and normals to webGL
+    //     vertexBuffers[whichSet] = gl.createBuffer(); // init empty webgl set vertex coord buffer
+    //     gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffers[whichSet]); // activate that buffer
+    //     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(inputFrog[whichSet].glVertices), gl.STATIC_DRAW); // data in
+    //     normalBuffers[whichSet] = gl.createBuffer(); // init empty webgl set normal component buffer
+    //     gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffers[whichSet]); // activate that buffer
+    //     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(inputFrog[whichSet].glNormals), gl.STATIC_DRAW); // data in
 
-                    // send the triangle indices to webGL
-                    triangleBuffers.push(gl.createBuffer()); // init empty triangle index buffer
-                    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, triangleBuffers[triangleBuffers.length - 1]); // activate that buffer
-                    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(ellipsoidModel.triangles), gl.STATIC_DRAW); // data in
-                } // end for each ellipsoid
+    //     UVBuffer[whichSet] = gl.createBuffer();
+    //     gl.bindBuffer(gl.ARRAY_BUFFER, UVBuffer[whichSet]);
+    //     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(inputFrog[whichSet].glUVs), gl.STATIC_DRAW);
 
-                viewDelta = vec3.length(vec3.subtract(temp, maxCorner, minCorner)) / 100; // set global
-            }
-        }
-    } catch (e) {
-        console.log(e);
-    } // end catch
-} // end load models
+    //     // set up the triangle index array, adjusting indices across sets
+    //     inputFrog[whichSet].glTriangles = []; // flat index list for webgl
+    //     triSetSizes[whichSet] = inputFrog[whichSet].triangles.length; // number of tris in this set
+    //     for (whichSetTri = 0; whichSetTri < triSetSizes[whichSet]; whichSetTri++) {
+    //         triToAdd = inputFrog[whichSet].triangles[whichSetTri]; // get tri to add
+    //         inputFrog[whichSet].glTriangles.push(triToAdd[0], triToAdd[1], triToAdd[2]); // put indices in set list
+    //     } // end for triangles in set
+
+    //     // send the triangle indices to webGL
+    //     triangleBuffers.push(gl.createBuffer()); // init empty triangle index buffer
+    //     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, triangleBuffers[whichSet]); // activate that buffer
+    //     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(inputFrog[whichSet].glTriangles), gl.STATIC_DRAW); // data in
+    // } // end for each triangle set
+
+
+    inputEllipsoids = getJSONFile(INPUT_ELLIPSOIDS_URL, 'ellipsoids'); // read in the ellipsoids
+
+    // init ellipsoid highlighting, translation and rotation; update bbox
+    let ellipsoid; // current ellipsoid
+    let ellipsoidModel; // current ellipsoid triangular model
+    const temp = vec3.create(); // an intermediate vec3
+    const minXYZ = vec3.create();
+    const maxXYZ = vec3.create(); // min/max xyz from ellipsoid
+    numEllipsoids = inputEllipsoids.length; // remember how many ellipsoids
+    for (let whichEllipsoid = 0; whichEllipsoid < numEllipsoids; whichEllipsoid++) {
+        // set up various stats and transforms for this ellipsoid
+        ellipsoid = inputEllipsoids[whichEllipsoid];
+        ellipsoid.on = false; // ellipsoids begin without highlight
+        ellipsoid.translation = vec3.fromValues(0, 0, 0); // ellipsoids begin without translation
+        ellipsoid.xAxis = vec3.fromValues(1, 0, 0); // ellipsoid X axis
+        ellipsoid.yAxis = vec3.fromValues(0, 1, 0); // ellipsoid Y axis
+        ellipsoid.center = vec3.fromValues(ellipsoid.x, ellipsoid.y, ellipsoid.z); // locate ellipsoid ctr
+        vec3.set(minXYZ, ellipsoid.x - ellipsoid.a, ellipsoid.y - ellipsoid.b, ellipsoid.z - ellipsoid.c);
+        vec3.set(maxXYZ, ellipsoid.x + ellipsoid.a, ellipsoid.y + ellipsoid.b, ellipsoid.z + ellipsoid.c);
+        vec3.min(minCorner, minCorner, minXYZ); // update world bbox min corner
+        vec3.max(maxCorner, maxCorner, maxXYZ); // update world bbox max corner
+
+        // make the ellipsoid model
+        ellipsoidModel = makeEllipsoid(ellipsoid, 32);
+
+        // send the ellipsoid vertex coords and normals to webGL
+        vertexBuffers.push(gl.createBuffer()); // init empty webgl ellipsoid vertex coord buffer
+        gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffers[vertexBuffers.length - 1]); // activate that buffer
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(ellipsoidModel.vertices), gl.STATIC_DRAW); // data in
+        normalBuffers.push(gl.createBuffer()); // init empty webgl ellipsoid vertex normal buffer
+        gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffers[normalBuffers.length - 1]); // activate that buffer
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(ellipsoidModel.normals), gl.STATIC_DRAW); // data in
+
+        triSetSizes.push(ellipsoidModel.triangles.length);
+
+        // send the triangle indices to webGL
+        triangleBuffers.push(gl.createBuffer()); // init empty triangle index buffer
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, triangleBuffers[triangleBuffers.length - 1]); // activate that buffer
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(ellipsoidModel.triangles), gl.STATIC_DRAW); // data in
+    } // end for each ellipsoid
+
+    viewDelta = vec3.length(vec3.subtract(temp, maxCorner, minCorner)) / 100; // set global
+
+} 
 
 // setup the webGL shaders
 function setupShaders() {
@@ -718,7 +776,7 @@ function renderModels() {
 
     let currSet; // the tri set and its material properties
     for (var whichTriSet = 0; whichTriSet < numTriangleSets; whichTriSet++) {
-        currSet = inputTriangles[whichTriSet];
+        currSet = inputFrog[whichTriSet];
         if (currSet.material.alpha >= 1.0) {
             // make model transform, add to view project
             makeModelTransform(currSet);
@@ -784,25 +842,25 @@ function renderModels() {
     // Transparency
     const transparencyOrder = [];
     for (var whichTriSet = 0; whichTriSet < numTriangleSets; whichTriSet++) {
-        currSet = inputTriangles[whichTriSet];
+        currSet = inputFrog[whichTriSet];
         if (currSet.material.alpha < 1.0) {
             transparencyOrder.push(whichTriSet);
         }
     }
 
     function paintersAlg(a, b) {
-        makeModelTransform(inputTriangles[a]);
+        makeModelTransform(inputFrog[a]);
         let v0 = vec3.create();
         let v1 = vec3.create();
         mat4.getTranslation(v0, mMatrix);
-        vec3.add(v1, v0, inputTriangles[a].center);
+        vec3.add(v1, v0, inputFrog[a].center);
         const dist = vec3.distance(v1, Eye);
 
-        makeModelTransform(inputTriangles[b]);
+        makeModelTransform(inputFrog[b]);
         v0 = vec3.create();
         v1 = vec3.create();
         mat4.getTranslation(v0, mMatrix);
-        vec3.add(v1, v0, inputTriangles[b].center);
+        vec3.add(v1, v0, inputFrog[b].center);
         return vec3.distance(v1, Eye) - dist;
     }
 
@@ -813,7 +871,7 @@ function renderModels() {
     gl.depthMask(false);
 
     for (var whichTriSet = 0; whichTriSet < transparencyOrder.length; whichTriSet++) {
-        currSet = inputTriangles[transparencyOrder[whichTriSet]];
+        currSet = inputFrog[transparencyOrder[whichTriSet]];
         if (currSet.material.alpha < 1.0) {
             // make model transform, add to view project
             makeModelTransform(currSet);
