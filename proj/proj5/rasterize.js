@@ -5,8 +5,8 @@
 /* assignment specific globals */
 const INPUT_FROG_URL = 'attributes/frog.json';
 const INPUT_ELLIPSOIDS_URL = 'attributes/ellipsoids.json'; // ellipsoids file loc
-const defaultEye = vec3.fromValues(0.1, 0.5, -0.9); // default eye position in world space
-const defaultCenter = vec3.fromValues(0.1, 0.8, 1.0); // default view direction in world space
+const defaultEye = vec3.fromValues(0.7, 0.5, -0.9); // default eye position in world space
+const defaultCenter = vec3.fromValues(0.7, 0.8, 1.0); // default view direction in world space
 const defaultUp = vec3.fromValues(0, 1, 0); // default view up vector
 const lightAmbient = vec3.fromValues(0.4, 0.4, 1); // default light ambient emission
 const lightDiffuse = vec3.fromValues(1, 1, 1); // default light diffuse emission
@@ -50,15 +50,67 @@ let Up = vec3.clone(defaultUp); // view up vector in world space
 
 // 14 x 14 grid
 STEP_SCALE = 0.1;
-const playerPosition = {x: 7, y: 0};
+const playerPosition = {x: 6, y: 0};
 var DISTANCE = 1.4;
-var speed0 = 0.01;
-var speed1 = 0.005;
-var speed2 = 0.0025;
-var speed3 = 0.015;
-var speed4 = 0.025;
+var speed0 = 0.001;
+var speed1 = 0.0005;
+var speed2 = 0.0001;
+var speed3 = 0.0015;
+var speed4 = 0.0025;
 let lastTime = 0;
 const fpsInterval = 1000 / 30; // 30 FPS
+
+var enemiesPositions = [
+    {x: -1, y: -1},
+
+    {x: 0, y: 1},
+    {x: 4, y: 1},
+    {x: 8, y: 1},
+    {x: 12, y: 1},
+
+    {x: 0, y: 2},
+    {x: 4, y: 2},
+    {x: 8, y: 2},
+    {x: 12, y: 2},
+
+    {x: 0, y: 3},
+    {x: 3, y: 3},
+    {x: 6, y: 3},
+    {x: 9, y: 3},
+    {x: 12, y: 3},
+
+    {x: 0, y: 4},
+    {x: 5, y: 4},
+    {x: 10, y: 4},
+
+    {x: 0, y: 5},
+
+    {x: 0, y: 6},
+    {x: 1, y: 6},
+    {x: 2, y: 6},
+    {x: 4, y: 6},
+    {x: 5, y: 6},
+    {x: 6, y: 6},
+    {x: 8, y: 6},
+    {x: 9, y: 6},
+    {x: 10, y: 6},
+
+    {x: 0, y: 7},
+    {x: 5, y: 7},
+    {x: 10, y: 7},
+
+    {x: 0, y: 8},
+
+    {x: 0, y: 9},
+    {x: 1, y: 9},
+    {x: 4, y: 9},
+    {x: 5, y: 9},
+    {x: 8, y: 9},
+    {x: 9, y: 9},
+
+    {x: 0, y: 10},
+    {x: 5, y: 10},
+];
 
 walls = [
     {x: 1, y: 11},
@@ -69,59 +121,82 @@ walls = [
     {x: 12, y: 11},
 ];
 
-// function playStepSound() {
-//     var audio = new Audio('assets/step.mp3');
-//     audio.play();
-// }
+function playStepSound() {
+    var audio = new Audio('attributes/mariojump.mp3');
+    // set the volume
+    audio.volume = 0.05;
+    // audio.play();
+}
 
 function initEnemies() {
+    // init frog
+    inputFrog[0].translation = vec3.fromValues(0.7, 0, 0);
+
+    // first row
     inputFrog[1].translation = vec3.fromValues(0.0, 0, 0);
-    inputFrog[2].translation = vec3.fromValues(-0.4, 0, 0);
-    inputFrog[3].translation = vec3.fromValues(-0.8, 0, 0);
-    inputFrog[4].translation = vec3.fromValues(0.4, 0, 0);
+    inputFrog[2].translation = vec3.fromValues(0.4, 0, 0);
+    inputFrog[3].translation = vec3.fromValues(0.8, 0, 0);
+    inputFrog[4].translation = vec3.fromValues(1.2, 0, 0);
 
     inputFrog[5].translation = vec3.fromValues(0.0, 0, 0);
-    inputFrog[6].translation = vec3.fromValues(-0.4, 0, 0);
-    inputFrog[7].translation = vec3.fromValues(-0.8, 0, 0);
-    inputFrog[8].translation = vec3.fromValues(0.4, 0, 0);
+    inputFrog[6].translation = vec3.fromValues(0.4, 0, 0);
+    inputFrog[7].translation = vec3.fromValues(0.8, 0, 0);
+    inputFrog[8].translation = vec3.fromValues(1.2, 0, 0);
 
     inputFrog[9].translation = vec3.fromValues(0.0, 0, 0);
-    inputFrog[10].translation = vec3.fromValues(-0.3, 0, 0);
-    inputFrog[11].translation = vec3.fromValues(0.3, 0, 0);
-    inputFrog[12].translation = vec3.fromValues(0.6, 0, 0);
-    inputFrog[13].translation = vec3.fromValues(-0.6, 0, 0);
+    inputFrog[10].translation = vec3.fromValues(0.3, 0, 0);
+    inputFrog[11].translation = vec3.fromValues(0.6, 0, 0);
+    inputFrog[12].translation = vec3.fromValues(0.9, 0, 0);
+    inputFrog[13].translation = vec3.fromValues(1.2, 0, 0);
 
     inputFrog[14].translation = vec3.fromValues(0.0, 0, 0);
-    inputFrog[15].translation = vec3.fromValues(-0.5, 0, 0);
-    inputFrog[16].translation = vec3.fromValues(0.5, 0, 0);
+    inputFrog[15].translation = vec3.fromValues(0.5, 0, 0);
+    inputFrog[16].translation = vec3.fromValues(1.0, 0, 0);
 
     inputFrog[17].translation = vec3.fromValues(0.0, 0, 0);
 
     inputFrog[18].translation = vec3.fromValues(0.0, 0, 0);
-    inputFrog[19].translation = vec3.fromValues(-0.1, 0, 0);
-    inputFrog[20].translation = vec3.fromValues(-0.2, 0, 0);
-    inputFrog[21].translation = vec3.fromValues(0.2, 0, 0);
-    inputFrog[22].translation = vec3.fromValues(0.3, 0, 0);
-    inputFrog[23].translation = vec3.fromValues(0.4, 0, 0);
-    inputFrog[24].translation = vec3.fromValues(0.6, 0, 0);
-    inputFrog[25].translation = vec3.fromValues(0.7, 0, 0);
-    inputFrog[26].translation = vec3.fromValues(0.8, 0, 0);
+    inputFrog[19].translation = vec3.fromValues(0.1, 0, 0);
+    inputFrog[20].translation = vec3.fromValues(0.2, 0, 0);
+    inputFrog[21].translation = vec3.fromValues(0.4, 0, 0);
+    inputFrog[22].translation = vec3.fromValues(0.5, 0, 0);
+    inputFrog[23].translation = vec3.fromValues(0.6, 0, 0);
+    inputFrog[24].translation = vec3.fromValues(0.8, 0, 0);
+    inputFrog[25].translation = vec3.fromValues(0.9, 0, 0);
+    inputFrog[26].translation = vec3.fromValues(1.0, 0, 0);
 
-    inputFrog[27].translation = vec3.fromValues(-0.5, 0, 0);
-    inputFrog[28].translation = vec3.fromValues(-0.0, 0, 0);
-    inputFrog[29].translation = vec3.fromValues(0.5, 0, 0);
+    inputFrog[27].translation = vec3.fromValues(0.0, 0, 0);
+    inputFrog[28].translation = vec3.fromValues(0.5, 0, 0);
+    inputFrog[29].translation = vec3.fromValues(1.0, 0, 0);
 
     inputFrog[30].translation = vec3.fromValues(0.0, 0, 0);
 
     inputFrog[31].translation = vec3.fromValues(0.0, 0, 0);
     inputFrog[32].translation = vec3.fromValues(0.1, 0, 0);
-    inputFrog[33].translation = vec3.fromValues(0.3, 0, 0);
-    inputFrog[34].translation = vec3.fromValues(0.4, 0, 0);
-    inputFrog[35].translation = vec3.fromValues(0.6, 0, 0);
-    inputFrog[36].translation = vec3.fromValues(0.7, 0, 0);
+    inputFrog[33].translation = vec3.fromValues(0.4, 0, 0);
+    inputFrog[34].translation = vec3.fromValues(0.5, 0, 0);
+    inputFrog[35].translation = vec3.fromValues(0.8, 0, 0);
+    inputFrog[36].translation = vec3.fromValues(0.9, 0, 0);
 
     inputFrog[37].translation = vec3.fromValues(0.0, 0, 0);
     inputFrog[38].translation = vec3.fromValues(0.8, 0, 0);
+}
+
+function checkHitEnemy() {
+    // based on the player's position, check if they hit an enemy
+    var playerX = playerPosition.x;
+    var playerY = playerPosition.y;
+
+    for (var i = 1; i < 39; i++) {
+        var enemyX = enemiesPositions[i].x;
+        var enemyY = enemiesPositions[i].y;
+
+        if (Math.abs(enemyX - playerX) < 0.1 && Math.abs(playerY - enemyY) < 0.01) {
+            console.log(playerX, playerY, enemyX, enemyY);
+            return true;
+        }
+    }
+    return false;
 }
 
 function gameLoop(time) {
@@ -131,23 +206,26 @@ function gameLoop(time) {
     if (elapsed > fpsInterval) {
         lastTime = time - (elapsed % fpsInterval);
 
-        // Update the x position of the second frog, and wrap around the screen
+        // row 1
         vec3.add(inputFrog[1].translation, inputFrog[1].translation, vec3.fromValues(speed0, 0, 0));
         vec3.add(inputFrog[2].translation, inputFrog[2].translation, vec3.fromValues(speed0, 0, 0));
         vec3.add(inputFrog[3].translation, inputFrog[3].translation, vec3.fromValues(speed0, 0, 0));
         vec3.add(inputFrog[4].translation, inputFrog[4].translation, vec3.fromValues(speed0, 0, 0));
 
+        // row 2
         vec3.add(inputFrog[5].translation, inputFrog[5].translation, vec3.fromValues(-speed1, 0, 0));
         vec3.add(inputFrog[6].translation, inputFrog[6].translation, vec3.fromValues(-speed1, 0, 0));
         vec3.add(inputFrog[7].translation, inputFrog[7].translation, vec3.fromValues(-speed1, 0, 0));
         vec3.add(inputFrog[8].translation, inputFrog[8].translation, vec3.fromValues(-speed1, 0, 0));
 
+        // row 3
         vec3.add(inputFrog[9].translation, inputFrog[9].translation, vec3.fromValues(speed2, 0, 0));
         vec3.add(inputFrog[10].translation, inputFrog[10].translation, vec3.fromValues(speed2, 0, 0));
         vec3.add(inputFrog[11].translation, inputFrog[11].translation, vec3.fromValues(speed2, 0, 0));
         vec3.add(inputFrog[12].translation, inputFrog[12].translation, vec3.fromValues(speed2, 0, 0));
         vec3.add(inputFrog[13].translation, inputFrog[13].translation, vec3.fromValues(speed2, 0, 0));
 
+        // row 5
         vec3.add(inputFrog[14].translation, inputFrog[14].translation, vec3.fromValues(-speed3, 0, 0));
         vec3.add(inputFrog[15].translation, inputFrog[15].translation, vec3.fromValues(-speed3, 0, 0));
         vec3.add(inputFrog[16].translation, inputFrog[16].translation, vec3.fromValues(-speed3, 0, 0));
@@ -187,128 +265,222 @@ function gameLoop(time) {
         vec3.add(inputFrog[37].translation, inputFrog[37].translation, vec3.fromValues(-speed2, 0, 0));
         vec3.add(inputFrog[38].translation, inputFrog[38].translation, vec3.fromValues(-speed2, 0, 0));
 
+        enemiesPositions[1].x += speed0 * 10;
+        enemiesPositions[2].x += speed0 * 10;
+        enemiesPositions[3].x += speed0 * 10;
+        enemiesPositions[4].x += speed0 * 10;
 
-        if (inputFrog[1].translation[0] > DISTANCE) {
-            inputFrog[1].translation[0] = -DISTANCE;
-        }
-        if (inputFrog[2].translation[0] > DISTANCE) {
-            inputFrog[2].translation[0] = -DISTANCE;
-        }
-        if (inputFrog[3].translation[0] > DISTANCE) {
-            inputFrog[3].translation[0] = -DISTANCE;
-        }
-        if (inputFrog[4].translation[0] > DISTANCE) {
-            inputFrog[4].translation[0] = -DISTANCE;
-        }
+        enemiesPositions[5].x -= speed1 * 10;
+        enemiesPositions[6].x -= speed1 * 10;
+        enemiesPositions[7].x -= speed1 * 10;
+        enemiesPositions[8].x -= speed1 * 10;
 
-        if (inputFrog[5].translation[0] < -DISTANCE) {
-            inputFrog[5].translation[0] = DISTANCE;
-        }
-        if (inputFrog[6].translation[0] < -DISTANCE) {
-            inputFrog[6].translation[0] = DISTANCE;
-        }
-        if (inputFrog[7].translation[0] < -DISTANCE) {
-            inputFrog[7].translation[0] = DISTANCE;
-        }
-        if (inputFrog[8].translation[0] < -DISTANCE) {
-            inputFrog[8].translation[0] = DISTANCE;
-        }
+        enemiesPositions[9].x += speed2 * 10;
+        enemiesPositions[10].x += speed2 * 10;
+        enemiesPositions[11].x += speed2 * 10;
+        enemiesPositions[12].x += speed2 * 10;
+        enemiesPositions[13].x += speed2 * 10;
 
-        if (inputFrog[9].translation[0] > DISTANCE) {
-            inputFrog[9].translation[0] = -DISTANCE;
-        }
-        if (inputFrog[10].translation[0] > DISTANCE) {
-            inputFrog[10].translation[0] = -DISTANCE;
-        }
-        if (inputFrog[11].translation[0] > DISTANCE) {
-            inputFrog[11].translation[0] = -DISTANCE;
-        }
-        if (inputFrog[12].translation[0] > DISTANCE) {
-            inputFrog[12].translation[0] = -DISTANCE;
-        }
-        if (inputFrog[13].translation[0] > DISTANCE) {
-            inputFrog[13].translation[0] = -DISTANCE;
-        }
+        enemiesPositions[14].x -= speed3 * 10;
+        enemiesPositions[15].x -= speed3 * 10;
+        enemiesPositions[16].x -= speed3 * 10;
 
-        if (inputFrog[14].translation[0] < -DISTANCE) {
-            inputFrog[14].translation[0] = DISTANCE;
-        }
-        if (inputFrog[15].translation[0] < -DISTANCE) {
-            inputFrog[15].translation[0] = DISTANCE;
-        }
-        if (inputFrog[16].translation[0] < -DISTANCE) {
-            inputFrog[16].translation[0] = DISTANCE;
-        }
+        enemiesPositions[17].x += speed4 * 10;
 
-        if (inputFrog[17].translation[0] > DISTANCE) {
-            inputFrog[17].translation[0] = -DISTANCE;
-        }
+        enemiesPositions[18].x += speed0 * 10;
+        enemiesPositions[19].x += speed0 * 10;
+        enemiesPositions[20].x += speed0 * 10;
+        enemiesPositions[21].x += speed0 * 10;
+        enemiesPositions[22].x += speed0 * 10;
+        enemiesPositions[23].x += speed0 * 10;
+        enemiesPositions[24].x += speed0 * 10;
+        enemiesPositions[25].x += speed0 * 10;
+        enemiesPositions[26].x += speed0 * 10;
 
-        if (inputFrog[18].translation[0] > DISTANCE) {
-            inputFrog[18].translation[0] = -DISTANCE;
+        enemiesPositions[27].x -= speed0 * 10;
+        enemiesPositions[28].x -= speed0 * 10;
+        enemiesPositions[29].x -= speed0 * 10;
+
+        enemiesPositions[30].x -= speed3 * 10;
+
+        enemiesPositions[31].x += speed1 * 10;
+        enemiesPositions[32].x += speed1 * 10;
+        enemiesPositions[33].x += speed1 * 10;
+        enemiesPositions[34].x += speed1 * 10;
+        enemiesPositions[35].x += speed1 * 10;
+        enemiesPositions[36].x += speed1 * 10;
+
+        enemiesPositions[37].x -= speed2 * 10;
+        enemiesPositions[38].x -= speed2 * 10;
+
+
+        if (inputFrog[1].translation[0] > 1.3) {
+            inputFrog[1].translation[0] = -0.2;
+            enemiesPositions[1].x = -2;
         }
-        if (inputFrog[19].translation[0] > DISTANCE) {
-            inputFrog[19].translation[0] = -DISTANCE;
+        if (inputFrog[2].translation[0] > 1.3) {
+            inputFrog[2].translation[0] = -0.2;
+            enemiesPositions[2].x = -2;
         }
-        if (inputFrog[20].translation[0] > DISTANCE) {
-            inputFrog[20].translation[0] = -DISTANCE;
+        if (inputFrog[3].translation[0] > 1.3) {
+            inputFrog[3].translation[0] = -0.2;
+            enemiesPositions[3].x = -2;
         }
-        if (inputFrog[21].translation[0] > DISTANCE) {
-            inputFrog[21].translation[0] = -DISTANCE;
-        }
-        if (inputFrog[22].translation[0] > DISTANCE) {
-            inputFrog[22].translation[0] = -DISTANCE;
-        }
-        if (inputFrog[23].translation[0] > DISTANCE) {
-            inputFrog[23].translation[0] = -DISTANCE;
-        }
-        if (inputFrog[24].translation[0] > DISTANCE) {
-            inputFrog[24].translation[0] = -DISTANCE;
-        }
-        if (inputFrog[25].translation[0] > DISTANCE) {
-            inputFrog[25].translation[0] = -DISTANCE;
-        }
-        if (inputFrog[26].translation[0] > DISTANCE) {
-            inputFrog[26].translation[0] = -DISTANCE;
-        }
-        if (inputFrog[27].translation[0] < -DISTANCE) {
-            inputFrog[27].translation[0] = DISTANCE;
-        }
-        if (inputFrog[28].translation[0] < -DISTANCE) {
-            inputFrog[28].translation[0] = DISTANCE;
-        }
-        if (inputFrog[29].translation[0] < -DISTANCE) {
-            inputFrog[29].translation[0] = DISTANCE;
+        if (inputFrog[4].translation[0] > 1.3) {
+            inputFrog[4].translation[0] = -0.2;
+            enemiesPositions[4].x = -2;
         }
 
-        if (inputFrog[30].translation[0] < -DISTANCE) {
-            inputFrog[30].translation[0] = DISTANCE;
+        if (inputFrog[5].translation[0] < -0.2) {
+            inputFrog[5].translation[0] = 1.3;
+            enemiesPositions[5].x = 13;
+        }
+        if (inputFrog[6].translation[0] < -0.2) {
+            inputFrog[6].translation[0] = 1.3;
+            enemiesPositions[6].x = 13;
+        }
+        if (inputFrog[7].translation[0] < -0.2) {
+            inputFrog[7].translation[0] = 1.3;
+            enemiesPositions[7].x = 13;
+        }
+        if (inputFrog[8].translation[0] < -0.2) {
+            inputFrog[8].translation[0] = 1.3;
+            enemiesPositions[8].x = 13;
         }
 
-        if (inputFrog[31].translation[0] > DISTANCE) {
-            inputFrog[31].translation[0] = -DISTANCE;
+        if (inputFrog[9].translation[0] > 1.3) {
+            inputFrog[9].translation[0] = -0.2;
+            enemiesPositions[9].x = -2;
         }
-        if (inputFrog[32].translation[0] > DISTANCE) {
-            inputFrog[32].translation[0] = -DISTANCE;
+        if (inputFrog[10].translation[0] > 1.3) {
+            inputFrog[10].translation[0] = -0.2;
+            enemiesPositions[10].x = -2;
         }
-        if (inputFrog[33].translation[0] > DISTANCE) {
-            inputFrog[33].translation[0] = -DISTANCE;
+        if (inputFrog[11].translation[0] > 1.3) {
+            inputFrog[11].translation[0] = -0.2;
+            enemiesPositions[11].x = -2;
         }
-        if (inputFrog[34].translation[0] > DISTANCE) {
-            inputFrog[34].translation[0] = -DISTANCE;
+        if (inputFrog[12].translation[0] > 1.3) {
+            inputFrog[12].translation[0] = -0.2;
+            enemiesPositions[12].x = -2;
         }
-        if (inputFrog[35].translation[0] > DISTANCE) {
-            inputFrog[35].translation[0] = -DISTANCE;
-        }
-        if (inputFrog[36].translation[0] > DISTANCE) {
-            inputFrog[36].translation[0] = -DISTANCE;
+        if (inputFrog[13].translation[0] > 1.3) {
+            inputFrog[13].translation[0] = -0.2;
+            enemiesPositions[13].x = -2;
         }
 
-        if (inputFrog[37].translation[0] > DISTANCE) {
-            inputFrog[37].translation[0] = -DISTANCE;
+        if (inputFrog[14].translation[0] < -0.2) {
+            inputFrog[14].translation[0] = 1.3;
+            enemiesPositions[14].x = 13;
         }
-        if (inputFrog[38].translation[0] < -DISTANCE) {
-            inputFrog[38].translation[0] = DISTANCE;
+        if (inputFrog[15].translation[0] < -0.2) {
+            inputFrog[15].translation[0] = 1.3;
+            enemiesPositions[15].x = 13;
+        }
+        if (inputFrog[16].translation[0] < -0.2) {
+            inputFrog[16].translation[0] = 1.3;
+            enemiesPositions[16].x = 13;
+        }
+
+        if (inputFrog[17].translation[0] > 1.3) {
+            inputFrog[17].translation[0] = -0.2;
+            enemiesPositions[17].x = -2;
+        }
+
+        if (inputFrog[18].translation[0] > 1.3) {
+            inputFrog[18].translation[0] = -0.2;
+            enemiesPositions[18].x = -2;
+        }
+        if (inputFrog[19].translation[0] > 1.3) {
+            inputFrog[19].translation[0] = -0.2;
+            enemiesPositions[19].x = -2;
+        }
+        if (inputFrog[20].translation[0] > 1.3) {
+            inputFrog[20].translation[0] = -0.2;
+            enemiesPositions[20].x = -2;
+        }
+        if (inputFrog[21].translation[0] > 1.3) {
+            inputFrog[21].translation[0] = -0.2;
+            enemiesPositions[21].x = -2;
+        }
+        if (inputFrog[22].translation[0] > 1.3) {
+            inputFrog[22].translation[0] = -0.2;
+            enemiesPositions[22].x = -2;
+        }
+        if (inputFrog[23].translation[0] > 1.3) {
+            inputFrog[23].translation[0] = -0.2;
+            enemiesPositions[23].x = -2;
+        }
+        if (inputFrog[24].translation[0] > 1.3) {
+            inputFrog[24].translation[0] = -0.2;
+            enemiesPositions[24].x = -2;
+        }
+        if (inputFrog[25].translation[0] > 1.3) {
+            inputFrog[25].translation[0] = -0.2;
+            enemiesPositions[25].x = -2;
+        }
+        if (inputFrog[26].translation[0] > 1.3) {
+            inputFrog[26].translation[0] = -0.2;
+            enemiesPositions[26].x = -2;
+        }
+
+        if (inputFrog[27].translation[0] < -0.2) {
+            inputFrog[27].translation[0] = 1.3;
+            enemiesPositions[27].x = 13;
+        }
+        if (inputFrog[28].translation[0] < -0.2) {
+            inputFrog[28].translation[0] = 1.3;
+            enemiesPositions[28].x = 13;
+        }
+        if (inputFrog[29].translation[0] < -0.2) {
+            inputFrog[29].translation[0] = 1.3;
+            enemiesPositions[29].x = 13;
+        }
+
+        if (inputFrog[30].translation[0] < -0.2) {
+            inputFrog[30].translation[0] = 1.3;
+            enemiesPositions[30].x = 13;
+        }
+
+        if (inputFrog[31].translation[0] > 1.3) {
+            inputFrog[31].translation[0] = -0.2;
+            enemiesPositions[31].x = -2;
+        }
+        if (inputFrog[32].translation[0] > 1.3) {
+            inputFrog[32].translation[0] = -0.2;
+            enemiesPositions[32].x = -2;
+        }
+        if (inputFrog[33].translation[0] > 1.3) {
+            inputFrog[33].translation[0] = -0.2;
+            enemiesPositions[33].x = -2;
+        }
+        if (inputFrog[34].translation[0] > 1.3) {
+            inputFrog[34].translation[0] = -0.2;
+            enemiesPositions[34].x = -2;
+        }
+        if (inputFrog[35].translation[0] > 1.3) {
+            inputFrog[35].translation[0] = -0.2;
+            enemiesPositions[35].x = -2;
+        }
+        if (inputFrog[36].translation[0] > 1.3) {
+            inputFrog[36].translation[0] = -0.2;
+            enemiesPositions[36].x = -2;
+        }
+
+        if (inputFrog[37].translation[0] < -0.2) {
+            inputFrog[37].translation[0] = 1.3;
+            enemiesPositions[37].x = 13;
+        }
+        if (inputFrog[38].translation[0] < -0.2) {
+            inputFrog[38].translation[0] = 1.3;
+            enemiesPositions[38].x = 13;
+        }
+
+
+        if (checkHitEnemy()) {
+            playerPosition.x = 6;
+            playerPosition.y = 0;
+            inputFrog[0].translation = vec3.fromValues(0.7, 0, 0);
         }
     }
 }
@@ -482,7 +654,8 @@ function handleKeyDown(event) {
             playerPosition.x += 1;
             vec3.add(inputFrog[0].translation, inputFrog[0].translation, vec3.fromValues(-STEP_SCALE, 0, 0));
         }
-
+        // console.log(playerPosition.x, playerPosition.y)
+        playStepSound();
         break;
     case 'ArrowLeft': // select previous triangle set
 
@@ -490,6 +663,8 @@ function handleKeyDown(event) {
             playerPosition.x -= 1;
             vec3.add(inputFrog[0].translation, inputFrog[0].translation, vec3.fromValues(STEP_SCALE, 0, 0));
         }
+        // console.log(playerPosition.x, playerPosition.y)
+        playStepSound();
         break;
     case 'ArrowUp': // select next ellipsoid
 
@@ -497,7 +672,8 @@ function handleKeyDown(event) {
             playerPosition.y += 1;
             vec3.add(inputFrog[0].translation, inputFrog[0].translation, vec3.fromValues(0, STEP_SCALE, 0));
         }
-
+        // console.log(playerPosition.x, playerPosition.y)
+        playStepSound();
         break;
     case 'ArrowDown': // select previous ellipsoid
 
@@ -505,6 +681,8 @@ function handleKeyDown(event) {
             playerPosition.y -= 1;
             vec3.add(inputFrog[0].translation, inputFrog[0].translation, vec3.fromValues(0, -STEP_SCALE, 0));
         }
+        playStepSound();
+        // console.log(playerPosition.x, playerPosition.y)
         break;
 
         // view change
