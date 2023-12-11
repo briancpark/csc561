@@ -61,7 +61,7 @@ var speedDive = 0.0001;
 var turtleAvail = true;
 let lastTime = 0;
 const fpsInterval = 1000 / 60; // 30 FPS
-var home_idx = 47;
+var homeIdx = 47;
 
 var enemiesPositions = [
     {x: -1, y: -1},
@@ -133,7 +133,7 @@ var frogHomes = [
     {x: 9, y: 11},
     // {x: 10, y: 11},
     {x: 13, y: 11},
-]
+];
 
 var stepAudio = new Audio('attributes/mariojump.mp3');
 var gameOverAudio = new Audio('attributes/solonggaybowser.mp3');
@@ -151,7 +151,7 @@ function gameOverSound() {
 function checkFrogHome() {
     var playerX = playerPosition.x;
     var playerY = playerPosition.y;
-    console.log(playerX, playerY)
+    console.log(playerX, playerY);
 
     for (var i = 0; i < frogHomes.length; i++) {
         var homeX = frogHomes[i].x;
@@ -159,8 +159,8 @@ function checkFrogHome() {
 
         if (playerX == homeX && playerY == homeY) {
             // replace one of the frog models as the position of the home
-            inputFrog[home_idx].translation = vec3.fromValues(homeX / 10, homeY / 10, -1.0);
-            home_idx++;
+            inputFrog[homeIdx].translation = vec3.fromValues(homeX / 10, homeY / 10, -1.0);
+            homeIdx++;
             return true;
         }
     }
@@ -594,10 +594,10 @@ function gameLoop(time) {
             playerPosition.y = 0;
             inputFrog[0].translation = vec3.fromValues(0.6, 0, 0);
         }
-        
-        if (home_idx == 52) {
+
+        if (homeIdx == 52) {
             // game is won!, send message to user
-            alert("You won!");
+            alert('You won!');
         }
     }
 }
