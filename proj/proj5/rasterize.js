@@ -191,7 +191,7 @@ function checkHitEnemy() {
         var enemyX = enemiesPositions[i].x;
         var enemyY = enemiesPositions[i].y;
 
-        if (Math.abs(enemyX - playerX) < 0.1 && Math.abs(playerY - enemyY) < 0.01) {
+        if (Math.abs(enemyX - playerX) < 0.01 && Math.abs(playerY - enemyY) < 0.01) {
             console.log(playerX, playerY, enemyX, enemyY);
             return true;
         }
