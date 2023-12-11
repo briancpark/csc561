@@ -50,15 +50,15 @@ let Up = vec3.clone(defaultUp); // view up vector in world space
 
 // 14 x 14 grid
 STEP_SCALE = 0.1;
-const playerPosition = {x: 6, y: 0};
+const playerPosition = {x: 7, y: 0};
 var DISTANCE = 1.4;
 var speed0 = 0.001;
-var speed1 = 0.0005;
-var speed2 = 0.0001;
-var speed3 = 0.0015;
-var speed4 = 0.0025;
+var speed1 = 0.0025;
+var speed2 = 0.001;
+var speed3 = 0.003;
+var speed4 = 0.0075;
 let lastTime = 0;
-const fpsInterval = 1000 / 30; // 30 FPS
+const fpsInterval = 1000 / 60; // 30 FPS
 
 var enemiesPositions = [
     {x: -1, y: -1},
@@ -121,11 +121,11 @@ walls = [
     {x: 12, y: 11},
 ];
 
+var stepAudio = new Audio('attributes/mariojump.mp3');
 function playStepSound() {
-    var audio = new Audio('attributes/mariojump.mp3');
     // set the volume
-    audio.volume = 0.05;
-    // audio.play();
+    stepAudio.volume = 0.05;
+    stepAudio.play();
 }
 
 function initEnemies() {
@@ -187,16 +187,50 @@ function checkHitEnemy() {
     var playerX = playerPosition.x;
     var playerY = playerPosition.y;
 
+    var platforms = [6, 7, 8, 9, 10];
+    var platform = platforms.includes(playerY);
+
     for (var i = 1; i < 39; i++) {
         var enemyX = enemiesPositions[i].x;
         var enemyY = enemiesPositions[i].y;
 
-        if (Math.abs(enemyX - playerX) < 0.01 && Math.abs(playerY - enemyY) < 0.01) {
-            console.log(playerX, playerY, enemyX, enemyY);
+        if (Math.abs(playerX - (enemyX + 1)) < 0.1 && Math.abs(playerY - enemyY) < 0.01 && !platforms.includes(playerY)) {
             return true;
         }
+
+        // if the player is on a platform, check that they are not in the water (i.e. not on a log)
+        if (platforms.includes(playerY) && platforms.includes(enemyY) && playerY == enemyY) {
+            if (playerY == 7) {
+                // logs are 3 units long
+                if (Math.abs(playerX - enemyX - 1) < 0.5 || playerX - (enemyX + 1) < 0.5) {
+                    platform &= false;
+                } else {
+                    platform &= true;
+                }
+            } else if (playerY == 8) {
+                // logs are 5 units long
+                if (Math.abs(playerX - enemyX) < 0.5 || playerX - (enemyX + 5) < 0.5) {
+                    platform &= false;
+                } else {
+                    platform &= true;
+                }
+            } else if (playerY == 10) {
+                // logs are 5 units long
+                if (Math.abs(playerX - enemyX) < 0.5 || playerX - (enemyX + 5) < 0.5) {
+                    platform &= false;
+                } else {
+                    platform &= true;
+                }
+            } else if (Math.abs(playerX - enemyX) < 0.5) {
+                platform &= false;
+            } else {
+                platform &= true;
+            }
+        }
     }
-    return false;
+
+
+    return platform;
 }
 
 function gameLoop(time) {
@@ -265,214 +299,229 @@ function gameLoop(time) {
         vec3.add(inputFrog[37].translation, inputFrog[37].translation, vec3.fromValues(-speed2, 0, 0));
         vec3.add(inputFrog[38].translation, inputFrog[38].translation, vec3.fromValues(-speed2, 0, 0));
 
-        enemiesPositions[1].x += speed0 * 10;
-        enemiesPositions[2].x += speed0 * 10;
-        enemiesPositions[3].x += speed0 * 10;
-        enemiesPositions[4].x += speed0 * 10;
+        enemiesPositions[1].x += (speed0 * 10);
+        enemiesPositions[2].x += (speed0 * 10);
+        enemiesPositions[3].x += (speed0 * 10);
+        enemiesPositions[4].x += (speed0 * 10);
 
-        enemiesPositions[5].x -= speed1 * 10;
-        enemiesPositions[6].x -= speed1 * 10;
-        enemiesPositions[7].x -= speed1 * 10;
-        enemiesPositions[8].x -= speed1 * 10;
+        enemiesPositions[5].x -= (speed1 * 10);
+        enemiesPositions[6].x -= (speed1 * 10);
+        enemiesPositions[7].x -= (speed1 * 10);
+        enemiesPositions[8].x -= (speed1 * 10);
 
-        enemiesPositions[9].x += speed2 * 10;
-        enemiesPositions[10].x += speed2 * 10;
-        enemiesPositions[11].x += speed2 * 10;
-        enemiesPositions[12].x += speed2 * 10;
-        enemiesPositions[13].x += speed2 * 10;
+        enemiesPositions[9].x += (speed2 * 10);
+        enemiesPositions[10].x += (speed2 * 10);
+        enemiesPositions[11].x += (speed2 * 10);
+        enemiesPositions[12].x += (speed2 * 10);
+        enemiesPositions[13].x += (speed2 * 10);
 
-        enemiesPositions[14].x -= speed3 * 10;
-        enemiesPositions[15].x -= speed3 * 10;
-        enemiesPositions[16].x -= speed3 * 10;
+        enemiesPositions[14].x -= (speed3 * 10);
+        enemiesPositions[15].x -= (speed3 * 10);
+        enemiesPositions[16].x -= (speed3 * 10);
 
-        enemiesPositions[17].x += speed4 * 10;
+        enemiesPositions[17].x += (speed4 * 10);
 
-        enemiesPositions[18].x += speed0 * 10;
-        enemiesPositions[19].x += speed0 * 10;
-        enemiesPositions[20].x += speed0 * 10;
-        enemiesPositions[21].x += speed0 * 10;
-        enemiesPositions[22].x += speed0 * 10;
-        enemiesPositions[23].x += speed0 * 10;
-        enemiesPositions[24].x += speed0 * 10;
-        enemiesPositions[25].x += speed0 * 10;
-        enemiesPositions[26].x += speed0 * 10;
+        enemiesPositions[18].x += (speed0 * 10);
+        enemiesPositions[19].x += (speed0 * 10);
+        enemiesPositions[20].x += (speed0 * 10);
+        enemiesPositions[21].x += (speed0 * 10);
+        enemiesPositions[22].x += (speed0 * 10);
+        enemiesPositions[23].x += (speed0 * 10);
+        enemiesPositions[24].x += (speed0 * 10);
+        enemiesPositions[25].x += (speed0 * 10);
+        enemiesPositions[26].x += (speed0 * 10);
 
-        enemiesPositions[27].x -= speed0 * 10;
-        enemiesPositions[28].x -= speed0 * 10;
-        enemiesPositions[29].x -= speed0 * 10;
+        enemiesPositions[27].x -= (speed0 * 10);
+        enemiesPositions[28].x -= (speed0 * 10);
+        enemiesPositions[29].x -= (speed0 * 10);
 
-        enemiesPositions[30].x -= speed3 * 10;
+        enemiesPositions[30].x -= (speed3 * 10);
 
-        enemiesPositions[31].x += speed1 * 10;
-        enemiesPositions[32].x += speed1 * 10;
-        enemiesPositions[33].x += speed1 * 10;
-        enemiesPositions[34].x += speed1 * 10;
-        enemiesPositions[35].x += speed1 * 10;
-        enemiesPositions[36].x += speed1 * 10;
+        enemiesPositions[31].x += (speed1 * 10);
+        enemiesPositions[32].x += (speed1 * 10);
+        enemiesPositions[33].x += (speed1 * 10);
+        enemiesPositions[34].x += (speed1 * 10);
+        enemiesPositions[35].x += (speed1 * 10);
+        enemiesPositions[36].x += (speed1 * 10);
 
-        enemiesPositions[37].x -= speed2 * 10;
-        enemiesPositions[38].x -= speed2 * 10;
+        enemiesPositions[37].x -= (speed2 * 10);
+        enemiesPositions[38].x -= (speed2 * 10);
 
 
-        if (inputFrog[1].translation[0] > 1.3) {
-            inputFrog[1].translation[0] = -0.2;
-            enemiesPositions[1].x = -2;
+        if (inputFrog[1].translation[0] > 1.5) {
+            inputFrog[1].translation[0] = -0.1;
+            enemiesPositions[1].x = -1;
         }
-        if (inputFrog[2].translation[0] > 1.3) {
-            inputFrog[2].translation[0] = -0.2;
-            enemiesPositions[2].x = -2;
+        if (inputFrog[2].translation[0] > 1.5) {
+            inputFrog[2].translation[0] = -0.1;
+            enemiesPositions[2].x = -1;
         }
-        if (inputFrog[3].translation[0] > 1.3) {
-            inputFrog[3].translation[0] = -0.2;
-            enemiesPositions[3].x = -2;
+        if (inputFrog[3].translation[0] > 1.5) {
+            inputFrog[3].translation[0] = -0.1;
+            enemiesPositions[3].x = -1;
         }
-        if (inputFrog[4].translation[0] > 1.3) {
-            inputFrog[4].translation[0] = -0.2;
-            enemiesPositions[4].x = -2;
+        if (inputFrog[4].translation[0] > 1.5) {
+            inputFrog[4].translation[0] = -0.1;
+            enemiesPositions[4].x = -1;
         }
 
-        if (inputFrog[5].translation[0] < -0.2) {
-            inputFrog[5].translation[0] = 1.3;
+        if (inputFrog[5].translation[0] < -1.5) {
+            inputFrog[5].translation[0] = 1.5;
             enemiesPositions[5].x = 13;
         }
-        if (inputFrog[6].translation[0] < -0.2) {
-            inputFrog[6].translation[0] = 1.3;
+        if (inputFrog[6].translation[0] < -1.5) {
+            inputFrog[6].translation[0] = 1.5;
             enemiesPositions[6].x = 13;
         }
-        if (inputFrog[7].translation[0] < -0.2) {
-            inputFrog[7].translation[0] = 1.3;
+        if (inputFrog[7].translation[0] < -1.5) {
+            inputFrog[7].translation[0] = 1.5;
             enemiesPositions[7].x = 13;
         }
-        if (inputFrog[8].translation[0] < -0.2) {
-            inputFrog[8].translation[0] = 1.3;
+        if (inputFrog[8].translation[0] < -1.5) {
+            inputFrog[8].translation[0] = 1.5;
             enemiesPositions[8].x = 13;
         }
 
-        if (inputFrog[9].translation[0] > 1.3) {
-            inputFrog[9].translation[0] = -0.2;
-            enemiesPositions[9].x = -2;
+        if (inputFrog[9].translation[0] > 1.5) {
+            inputFrog[9].translation[0] = -0.1;
+            enemiesPositions[9].x = -1;
         }
-        if (inputFrog[10].translation[0] > 1.3) {
-            inputFrog[10].translation[0] = -0.2;
-            enemiesPositions[10].x = -2;
+        if (inputFrog[10].translation[0] > 1.5) {
+            inputFrog[10].translation[0] = -0.1;
+            enemiesPositions[10].x = -1;
         }
-        if (inputFrog[11].translation[0] > 1.3) {
-            inputFrog[11].translation[0] = -0.2;
-            enemiesPositions[11].x = -2;
+        if (inputFrog[11].translation[0] > 1.5) {
+            inputFrog[11].translation[0] = -0.1;
+            enemiesPositions[11].x = -1;
         }
-        if (inputFrog[12].translation[0] > 1.3) {
-            inputFrog[12].translation[0] = -0.2;
-            enemiesPositions[12].x = -2;
+        if (inputFrog[12].translation[0] > 1.5) {
+            inputFrog[12].translation[0] = -0.1;
+            enemiesPositions[12].x = -1;
         }
-        if (inputFrog[13].translation[0] > 1.3) {
-            inputFrog[13].translation[0] = -0.2;
-            enemiesPositions[13].x = -2;
+        if (inputFrog[13].translation[0] > 1.5) {
+            inputFrog[13].translation[0] = -0.1;
+            enemiesPositions[13].x = -1;
         }
-
-        if (inputFrog[14].translation[0] < -0.2) {
-            inputFrog[14].translation[0] = 1.3;
+        if (inputFrog[14].translation[0] < -1.5) {
+            inputFrog[14].translation[0] = 1.5;
             enemiesPositions[14].x = 13;
         }
-        if (inputFrog[15].translation[0] < -0.2) {
-            inputFrog[15].translation[0] = 1.3;
+        if (inputFrog[15].translation[0] < -1.5) {
+            inputFrog[15].translation[0] = 1.5;
             enemiesPositions[15].x = 13;
         }
-        if (inputFrog[16].translation[0] < -0.2) {
-            inputFrog[16].translation[0] = 1.3;
+        if (inputFrog[16].translation[0] < -1.5) {
+            inputFrog[16].translation[0] = 1.5;
             enemiesPositions[16].x = 13;
         }
 
-        if (inputFrog[17].translation[0] > 1.3) {
-            inputFrog[17].translation[0] = -0.2;
-            enemiesPositions[17].x = -2;
+        if (inputFrog[17].translation[0] > 1.5) {
+            inputFrog[17].translation[0] = -0.1;
+            enemiesPositions[17].x = -1;
         }
 
-        if (inputFrog[18].translation[0] > 1.3) {
-            inputFrog[18].translation[0] = -0.2;
-            enemiesPositions[18].x = -2;
-        }
-        if (inputFrog[19].translation[0] > 1.3) {
-            inputFrog[19].translation[0] = -0.2;
-            enemiesPositions[19].x = -2;
-        }
-        if (inputFrog[20].translation[0] > 1.3) {
-            inputFrog[20].translation[0] = -0.2;
-            enemiesPositions[20].x = -2;
-        }
-        if (inputFrog[21].translation[0] > 1.3) {
-            inputFrog[21].translation[0] = -0.2;
-            enemiesPositions[21].x = -2;
-        }
-        if (inputFrog[22].translation[0] > 1.3) {
-            inputFrog[22].translation[0] = -0.2;
-            enemiesPositions[22].x = -2;
-        }
-        if (inputFrog[23].translation[0] > 1.3) {
-            inputFrog[23].translation[0] = -0.2;
-            enemiesPositions[23].x = -2;
-        }
-        if (inputFrog[24].translation[0] > 1.3) {
-            inputFrog[24].translation[0] = -0.2;
-            enemiesPositions[24].x = -2;
-        }
-        if (inputFrog[25].translation[0] > 1.3) {
-            inputFrog[25].translation[0] = -0.2;
-            enemiesPositions[25].x = -2;
-        }
-        if (inputFrog[26].translation[0] > 1.3) {
-            inputFrog[26].translation[0] = -0.2;
-            enemiesPositions[26].x = -2;
+        if (inputFrog[18].translation[0] > 1.5) {
+            inputFrog[18].translation[0] = -0.1;
+            enemiesPositions[18].x = -1;
         }
 
-        if (inputFrog[27].translation[0] < -0.2) {
-            inputFrog[27].translation[0] = 1.3;
+        if (inputFrog[19].translation[0] > 1.5) {
+            inputFrog[19].translation[0] = -0.1;
+            enemiesPositions[19].x = -1;
+        }
+
+        if (inputFrog[20].translation[0] > 1.5) {
+            inputFrog[20].translation[0] = -0.1;
+            enemiesPositions[20].x = -1;
+        }
+
+        if (inputFrog[21].translation[0] > 1.5) {
+            inputFrog[21].translation[0] = -0.1;
+            enemiesPositions[21].x = -1;
+        }
+
+        if (inputFrog[22].translation[0] > 1.5) {
+            inputFrog[22].translation[0] = -0.1;
+            enemiesPositions[22].x = -1;
+        }
+
+        if (inputFrog[23].translation[0] > 1.5) {
+            inputFrog[23].translation[0] = -0.1;
+            enemiesPositions[23].x = -1;
+        }
+
+        if (inputFrog[24].translation[0] > 1.5) {
+            inputFrog[24].translation[0] = -0.1;
+            enemiesPositions[24].x = -1;
+        }
+
+        if (inputFrog[25].translation[0] > 1.5) {
+            inputFrog[25].translation[0] = -0.1;
+            enemiesPositions[25].x = -1;
+        }
+
+        if (inputFrog[26].translation[0] > 1.5) {
+            inputFrog[26].translation[0] = -0.1;
+            enemiesPositions[26].x = -1;
+        }
+
+        if (inputFrog[27].translation[0] < -1.5) {
+            inputFrog[27].translation[0] = 1.5;
             enemiesPositions[27].x = 13;
         }
-        if (inputFrog[28].translation[0] < -0.2) {
-            inputFrog[28].translation[0] = 1.3;
+
+        if (inputFrog[28].translation[0] < -1.5) {
+            inputFrog[28].translation[0] = 1.5;
             enemiesPositions[28].x = 13;
         }
-        if (inputFrog[29].translation[0] < -0.2) {
-            inputFrog[29].translation[0] = 1.3;
+
+        if (inputFrog[29].translation[0] < -1.5) {
+            inputFrog[29].translation[0] = 1.5;
             enemiesPositions[29].x = 13;
         }
 
-        if (inputFrog[30].translation[0] < -0.2) {
-            inputFrog[30].translation[0] = 1.3;
+        if (inputFrog[30].translation[0] < -1.5) {
+            inputFrog[30].translation[0] = 1.5;
             enemiesPositions[30].x = 13;
         }
 
-        if (inputFrog[31].translation[0] > 1.3) {
-            inputFrog[31].translation[0] = -0.2;
-            enemiesPositions[31].x = -2;
-        }
-        if (inputFrog[32].translation[0] > 1.3) {
-            inputFrog[32].translation[0] = -0.2;
-            enemiesPositions[32].x = -2;
-        }
-        if (inputFrog[33].translation[0] > 1.3) {
-            inputFrog[33].translation[0] = -0.2;
-            enemiesPositions[33].x = -2;
-        }
-        if (inputFrog[34].translation[0] > 1.3) {
-            inputFrog[34].translation[0] = -0.2;
-            enemiesPositions[34].x = -2;
-        }
-        if (inputFrog[35].translation[0] > 1.3) {
-            inputFrog[35].translation[0] = -0.2;
-            enemiesPositions[35].x = -2;
-        }
-        if (inputFrog[36].translation[0] > 1.3) {
-            inputFrog[36].translation[0] = -0.2;
-            enemiesPositions[36].x = -2;
+        if (inputFrog[31].translation[0] > 1.5) {
+            inputFrog[31].translation[0] = -0.1;
+            enemiesPositions[31].x = -1;
         }
 
-        if (inputFrog[37].translation[0] < -0.2) {
-            inputFrog[37].translation[0] = 1.3;
+        if (inputFrog[32].translation[0] > 1.5) {
+            inputFrog[32].translation[0] = -0.1;
+            enemiesPositions[32].x = -1;
+        }
+
+        if (inputFrog[33].translation[0] > 1.5) {
+            inputFrog[33].translation[0] = -0.1;
+            enemiesPositions[33].x = -1;
+        }
+
+        if (inputFrog[34].translation[0] > 1.5) {
+            inputFrog[34].translation[0] = -0.1;
+            enemiesPositions[34].x = -1;
+        }
+
+        if (inputFrog[35].translation[0] > 1.5) {
+            inputFrog[35].translation[0] = -0.1;
+            enemiesPositions[35].x = -1;
+        }
+
+        if (inputFrog[36].translation[0] > 1.5) {
+            inputFrog[36].translation[0] = -0.1;
+            enemiesPositions[36].x = -1;
+        }
+
+        if (inputFrog[37].translation[0] < -1.5) {
+            inputFrog[37].translation[0] = 1.5;
             enemiesPositions[37].x = 13;
         }
-        if (inputFrog[38].translation[0] < -0.2) {
-            inputFrog[38].translation[0] = 1.3;
+
+        if (inputFrog[38].translation[0] < -1.5) {
+            inputFrog[38].translation[0] = 1.5;
             enemiesPositions[38].x = 13;
         }
 
@@ -480,7 +529,7 @@ function gameLoop(time) {
         if (checkHitEnemy()) {
             playerPosition.x = 6;
             playerPosition.y = 0;
-            inputFrog[0].translation = vec3.fromValues(0.7, 0, 0);
+            inputFrog[0].translation = vec3.fromValues(0.6, 0, 0);
         }
     }
 }
@@ -649,21 +698,17 @@ function handleKeyDown(event) {
         handleKeyDown.whichOn = -1; // nothing highlighted
         break;
     case 'ArrowRight': // select next triangle set
-        // update the frog's position
-        if (playerPosition.x < 13 && !nextPosHitWall(playerPosition.x + 1, playerPosition.y)) {
-            playerPosition.x += 1;
+        if (playerPosition.x > 0 && !nextPosHitWall(playerPosition.x - 1, playerPosition.y)) {
+            playerPosition.x -= 1;
             vec3.add(inputFrog[0].translation, inputFrog[0].translation, vec3.fromValues(-STEP_SCALE, 0, 0));
         }
-        // console.log(playerPosition.x, playerPosition.y)
         playStepSound();
         break;
     case 'ArrowLeft': // select previous triangle set
-
-        if (playerPosition.x > 0 && !nextPosHitWall(playerPosition.x - 1, playerPosition.y)) {
-            playerPosition.x -= 1;
+        if (playerPosition.x < 13 && !nextPosHitWall(playerPosition.x + 1, playerPosition.y)) {
+            playerPosition.x += 1;
             vec3.add(inputFrog[0].translation, inputFrog[0].translation, vec3.fromValues(STEP_SCALE, 0, 0));
         }
-        // console.log(playerPosition.x, playerPosition.y)
         playStepSound();
         break;
     case 'ArrowUp': // select next ellipsoid
@@ -672,7 +717,6 @@ function handleKeyDown(event) {
             playerPosition.y += 1;
             vec3.add(inputFrog[0].translation, inputFrog[0].translation, vec3.fromValues(0, STEP_SCALE, 0));
         }
-        // console.log(playerPosition.x, playerPosition.y)
         playStepSound();
         break;
     case 'ArrowDown': // select previous ellipsoid
@@ -682,7 +726,6 @@ function handleKeyDown(event) {
             vec3.add(inputFrog[0].translation, inputFrog[0].translation, vec3.fromValues(0, -STEP_SCALE, 0));
         }
         playStepSound();
-        // console.log(playerPosition.x, playerPosition.y)
         break;
 
         // view change

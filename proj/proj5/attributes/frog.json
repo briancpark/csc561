@@ -60,7 +60,7 @@
           "specular": [0.3, 0.3, 0.3],
           "n": 32,
           "alpha": 1.0,
-          "texture": "tree.png"
+          "texture": "tallgrass.png"
         },
         "vertices": [
             [0, 0.1, 0.0],
@@ -114,7 +114,7 @@
           "specular": [0.3, 0.3, 0.3],
           "n": 32,
           "alpha": 1.0,
-          "texture": "tree.png"
+          "texture": "tallgrass.png"
         },
         "vertices": [
             [0, 0.1, 0.0],
@@ -169,7 +169,7 @@
           "specular": [0.3, 0.3, 0.3],
           "n": 32,
           "alpha": 1.0,
-          "texture": "tree.png"
+          "texture": "tallgrass.png"
         },
         "vertices": [
             [0, 0.1, 0.0],
@@ -225,7 +225,7 @@
           "specular": [0.3, 0.3, 0.3],
           "n": 32,
           "alpha": 1.0,
-          "texture": "tree.png"
+          "texture": "tallgrass.png"
         },
         "vertices": [
             [0, 0.1, 0.0],
@@ -295,7 +295,7 @@
           "specular": [0.3, 0.3, 0.3],
           "n": 32,
           "alpha": 1.0,
-          "texture": "earth.png"
+          "texture": "tallgrass.png"
         },
         "vertices": [
             [0, 0.2, 0.0],
@@ -349,7 +349,7 @@
           "specular": [0.3, 0.3, 0.3],
           "n": 32,
           "alpha": 1.0,
-          "texture": "earth.png"
+          "texture": "tallgrass.png"
         },
         "vertices": [
             [0, 0.2, 0.0],
@@ -404,7 +404,7 @@
           "specular": [0.3, 0.3, 0.3],
           "n": 32,
           "alpha": 1.0,
-          "texture": "earth.png"
+          "texture": "tallgrass.png"
         },
         "vertices": [
             [0, 0.2, 0.0],
@@ -460,7 +460,7 @@
           "specular": [0.3, 0.3, 0.3],
           "n": 32,
           "alpha": 1.0,
-          "texture": "earth.png"
+          "texture": "tallgrass.png"
         },
         "vertices": [
             [0, 0.2, 0.0],
@@ -800,21 +800,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
       {
         "material": {
           "ambient": [0.1, 0.1, 0.1],
@@ -822,7 +807,7 @@
           "specular": [0.3, 0.3, 0.3],
           "n": 32,
           "alpha": 1.0,
-          "texture": "abe.png"
+          "texture": "tallgrass.png"
         },
         "vertices": [
             [0, 0.4, 0.0],
@@ -876,7 +861,7 @@
           "specular": [0.3, 0.3, 0.3],
           "n": 32,
           "alpha": 1.0,
-          "texture": "abe.png"
+          "texture": "tallgrass.png"
         },
         "vertices": [
             [0, 0.4, 0.0],
@@ -932,7 +917,7 @@
           "specular": [0.3, 0.3, 0.3],
           "n": 32,
           "alpha": 1.0,
-          "texture": "abe.png"
+          "texture": "tallgrass.png"
         },
         "vertices": [
             [0, 0.4, 0.0],
@@ -998,9 +983,9 @@
           "ambient": [0.1, 0.1, 0.1],
           "diffuse": [0.6, 0.6, 0.6],
           "specular": [0.3, 0.3, 0.3],
-          "n": 13,
-          "alpha": 1.0,
-          "texture": "bowser.png"
+          "n": 1,
+          "alpha": 0.3,
+          "texture": "bowser.jpg"
         },
         "vertices": [
             [0, 0.5, 0.0],
