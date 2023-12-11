@@ -61,6 +61,7 @@ var speedDive = 0.0001;
 var turtleAvail = true;
 let lastTime = 0;
 const fpsInterval = 1000 / 60; // 30 FPS
+var homeIdx = 47;
 
 var enemiesPositions = [
     {x: -1, y: -1},
@@ -123,6 +124,17 @@ walls = [
     {x: 12, y: 11},
 ];
 
+var frogHomes = [
+    {x: 0, y: 11},
+    {x: 3, y: 11},
+    // {x: 4, y: 11},
+    {x: 6, y: 11},
+    // {x: 7, y: 11},
+    {x: 9, y: 11},
+    // {x: 10, y: 11},
+    {x: 13, y: 11},
+];
+
 var stepAudio = new Audio('attributes/mariojump.mp3');
 var gameOverAudio = new Audio('attributes/solonggaybowser.mp3');
 function playStepSound() {
@@ -134,6 +146,25 @@ function playStepSound() {
 function gameOverSound() {
     gameOverAudio.volume = 0.05;
     gameOverAudio.play();
+}
+
+function checkFrogHome() {
+    var playerX = playerPosition.x;
+    var playerY = playerPosition.y;
+    console.log(playerX, playerY);
+
+    for (var i = 0; i < frogHomes.length; i++) {
+        var homeX = frogHomes[i].x;
+        var homeY = frogHomes[i].y;
+
+        if (playerX == homeX && playerY == homeY) {
+            // replace one of the frog models as the position of the home
+            inputFrog[homeIdx].translation = vec3.fromValues(homeX / 10, homeY / 10, -1.0);
+            homeIdx++;
+            return true;
+        }
+    }
+    return false;
 }
 
 function initEnemies() {
@@ -533,7 +564,7 @@ function gameLoop(time) {
             enemiesPositions[38].x = 13;
         }
 
-        // every so often  turtles will dive
+        // every so often turtles will dive
         vec3.add(inputFrog[18].translation, inputFrog[18].translation, vec3.fromValues(0, 0, -speedDive));
         vec3.add(inputFrog[19].translation, inputFrog[19].translation, vec3.fromValues(0, 0, -speedDive));
         vec3.add(inputFrog[20].translation, inputFrog[20].translation, vec3.fromValues(0, 0, -speedDive));
@@ -556,6 +587,17 @@ function gameLoop(time) {
             playerPosition.y = 0;
             gameOverSound();
             inputFrog[0].translation = vec3.fromValues(0.6, 0, 0);
+        }
+
+        if (checkFrogHome()) {
+            playerPosition.x = 6;
+            playerPosition.y = 0;
+            inputFrog[0].translation = vec3.fromValues(0.6, 0, 0);
+        }
+
+        if (homeIdx == 52) {
+            // game is won!, send message to user
+            alert('You won!');
         }
     }
 }
