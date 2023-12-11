@@ -27,7 +27,7 @@ const triSetSizes = []; // this contains the size of each triangle set
 const triangleBuffers = []; // lists of indices into vertexBuffers by set, in triples
 const viewDelta = 0.1; // how much to displace view with each key press
 
-const replace = true;
+var replace = true;
 const UVBuffer = [];
 const textures = [];
 let textureULoc;
@@ -805,6 +805,9 @@ function handleKeyDown(event) {
         Eye = vec3.copy(Eye, defaultEye);
         Center = vec3.copy(Center, defaultCenter);
         Up = vec3.copy(Up, defaultUp);
+        break;
+    case 'KeyB':
+        replace = !replace;
         break;
     }
 }
