@@ -57,6 +57,8 @@ var speed1 = 0.0025;
 var speed2 = 0.001;
 var speed3 = 0.003;
 var speed4 = 0.0075;
+var speedDive = 0.0001;
+var turtleAvail = true;
 let lastTime = 0;
 const fpsInterval = 1000 / 60; // 30 FPS
 
@@ -122,10 +124,16 @@ walls = [
 ];
 
 var stepAudio = new Audio('attributes/mariojump.mp3');
+var gameOverAudio = new Audio('attributes/solonggaybowser.mp3');
 function playStepSound() {
     // set the volume
     stepAudio.volume = 0.05;
     stepAudio.play();
+}
+
+function gameOverSound() {
+    gameOverAudio.volume = 0.05;
+    gameOverAudio.play();
 }
 
 function initEnemies() {
@@ -221,7 +229,7 @@ function checkHitEnemy() {
                 } else {
                     platform &= true;
                 }
-            } else if (Math.abs(playerX - enemyX) < 0.5) {
+            } else if (Math.abs(playerX - enemyX) < 0.5 && turtleAvail) {
                 platform &= false;
             } else {
                 platform &= true;
@@ -525,10 +533,28 @@ function gameLoop(time) {
             enemiesPositions[38].x = 13;
         }
 
+        // every so often  turtles will dive
+        vec3.add(inputFrog[18].translation, inputFrog[18].translation, vec3.fromValues(0, 0, -speedDive));
+        vec3.add(inputFrog[19].translation, inputFrog[19].translation, vec3.fromValues(0, 0, -speedDive));
+        vec3.add(inputFrog[20].translation, inputFrog[20].translation, vec3.fromValues(0, 0, -speedDive));
+
+        if (inputFrog[18].translation[2] > 0.02) {
+            speedDive *= -1;
+        }
+        if (inputFrog[18].translation[2] < -0.01) {
+            speedDive *= -1;
+        }
+
+        if (inputFrog[18].translation[2] > 0) {
+            turtleAvail = false;
+        } else {
+            turtleAvail = true;
+        }
 
         if (checkHitEnemy()) {
             playerPosition.x = 6;
             playerPosition.y = 0;
+            gameOverSound();
             inputFrog[0].translation = vec3.fromValues(0.6, 0, 0);
         }
     }
