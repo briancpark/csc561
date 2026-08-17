@@ -342,8 +342,8 @@ function handleKeyDown(event) {
         }
         for (let whichEllipsoid = 0; whichEllipsoid < numEllipsoids; whichEllipsoid++) {
             vec3.set(inputEllipsoids[whichEllipsoid].translation, 0, 0, 0);
-            vec3.set(inputEllipsoids[whichTriSet].xAxis, 1, 0, 0);
-            vec3.set(inputEllipsoids[whichTriSet].yAxis, 0, 1, 0);
+            vec3.set(inputEllipsoids[whichEllipsoid].xAxis, 1, 0, 0);
+            vec3.set(inputEllipsoids[whichEllipsoid].yAxis, 0, 1, 0);
         }
         break;
     }
@@ -589,8 +589,8 @@ function loadModels() {
 // setup the webGL shaders
 function setupShaders() {
     // define vertex shader in essl using es6 template strings
-    const vShaderCode = loadShaderFile('./vshader.glsl');
-    const fShaderCode = loadShaderFile('./fshader.glsl');
+    const vShaderCode = loadShaderFile('./vShader.glsl');
+    const fShaderCode = loadShaderFile('./fShader.glsl');
 
     try {
         const fShader = gl.createShader(gl.FRAGMENT_SHADER); // create frag shader
@@ -843,9 +843,6 @@ function renderModels() {
             gl.bindTexture(gl.TEXTURE_2D, textures[transparencyOrder[whichTriSet]]);
 
             // triangle buffer: activate and render
-            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, triangleBuffers[whichTriSet]); // activate
-            gl.drawElements(gl.TRIANGLES, 3 * triSetSizes[whichTriSet], gl.UNSIGNED_SHORT, 0); // render
-
             gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, triangleBuffers[transparencyOrder[whichTriSet]]); // activate
             gl.drawElements(gl.TRIANGLES, 3 * triSetSizes[transparencyOrder[whichTriSet]], gl.UNSIGNED_SHORT, 0); // render
         }

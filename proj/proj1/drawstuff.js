@@ -1,7 +1,7 @@
 /* eslint-disable require-jsdoc, no-throw-literal, max-len, no-unused-vars */
 
 /* Constants */
-const INPUT_ELLIPSOIDS_URL = 'https://ncsucgclass.github.io/prog1/ellipsoids.json';
+const INPUT_ELLIPSOIDS_URL = 'attributes/ellipsoids.json';
 const INPUT_LIGHTS_URL = 'attributes/lights.json';
 const INPUT_TRIANGLES_URL = 'attributes/triangles2.json';
 
@@ -139,7 +139,7 @@ function getInput(url) {
         }
     } // until its loaded or we time out after three seconds
     if ((httpReq.status !== 200) || (httpReq.readyState !== XMLHttpRequest.DONE)) {
-        console.log * ('Unable to open input ellipses file!');
+        console.log('Unable to open input ellipses file!');
         return String.null;
     } else {
         return JSON.parse(httpReq.response);
