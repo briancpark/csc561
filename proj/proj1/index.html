@@ -1,11 +1,47 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<title>Pixel Drawing</title>
-<script type="text/javascript" src="drawstuff.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Project 1 · Ray Casting — CSC 561</title>
+    <link rel="stylesheet" href="../../assets/site.css">
+    <script type="text/javascript" src="drawstuff.js"></script>
 </head>
-<body onload="main();">
-<canvas id="viewport" width="512" height="512"></canvas>
+
+<body onload="main();" class="project p1">
+    <header class="site-header">
+        <a class="back" href="../../index.html">&larr; All projects</a>
+        <span class="crumb">Project 01</span>
+        <nav class="pager">
+            <a href="../proj2/index.html">Next &rsaquo;</a>
+        </nav>
+    </header>
+
+    <main>
+        <h1>Ray Casting</h1>
+        <p class="lede">A software renderer that casts a ray through every pixel and
+            shades ellipsoids with Blinn&ndash;Phong lighting &mdash; all on a plain 2D canvas,
+            no GPU involved.</p>
+
+        <div class="stage">
+            <canvas id="viewport" width="512" height="512"></canvas>
+        </div>
+
+        <section class="controls">
+            <h2>Controls</h2>
+            <div class="grid">
+                <div class="key-row">
+                    <span class="keys"><kbd>Space</kbd></span>
+                    <span class="what">Render the triangle scene with a randomized light position</span>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <p>&copy; 2023 Brian Park &middot; CSC 561</p>
+    </footer>
 </body>
+
 </html>

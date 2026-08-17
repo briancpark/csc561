@@ -1,5 +1,11 @@
-# Project 5: Frogger
+# Project 5: Hopper
 
-The assignment is available to view publicly on my website! [www.briancpark.com](https://www.briancpark.com/csc561/proj/proj5/index.html)
+Play it on my website! [www.briancpark.com](https://www.briancpark.com/csc561/proj/proj5/index.html)
 
-Move arrows to move the frog. You can also use wasd and WASD to move the perspective of the game board. Some other things that are implemented on top of the required components are sound effects. Press B to enable the transparencies (it looks ugly because I hand made every attribute and forgot to change it). Press "!" to lock camera.
+An endless river-crossing game written from scratch in WebGL2 (originally a
+Frogger clone for the course, later rebuilt as a graphics showcase). Hop with
+the arrow keys or WASD, restart with R. Features real-time shadow mapping with
+PCF, vertex-shader water with analytic normals, hemisphere + Blinn-Phong
+lighting with fog, an MSAA offscreen pipeline with a tonemap/vignette post
+pass, point-sprite particles, procedural WebAudio sound, and seeded procedural
+world generation (`?seed=N` for a reproducible run).

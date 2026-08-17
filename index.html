@@ -1,30 +1,79 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
-    <title>Computer Graphics Portfolio</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>CSC 561 · Computer Graphics Portfolio</title>
+    <link rel="stylesheet" href="assets/site.css">
 </head>
 
 <body>
-    <header>
-        <h1>Computer Graphics Projects</h1>
-    </header>
+    <main>
+        <header class="hero">
+            <p class="kicker">CSC 561 · NC State · Fall 2023</p>
+            <h1>Computer Graphics Projects</h1>
+            <p>Five projects from Principles of Computer Graphics — from a software
+                ray caster written from scratch to a fully playable WebGL Frogger.
+                Everything renders live in your browser; each page lists its controls.</p>
+        </header>
 
-    <p>Here are my projects created for a Computer Graphics class.</p>
+        <nav class="project-grid">
+            <a class="card p1" href="proj/proj1/index.html">
+                <div class="thumb"><span>01</span></div>
+                <div class="body">
+                    <h2>Ray Casting</h2>
+                    <p>A software ray caster drawing ellipsoids and triangles
+                        pixel-by-pixel with Blinn–Phong lighting — no GPU involved.</p>
+                    <div class="tags"><span>2D canvas</span><span>ray casting</span><span>Blinn–Phong</span></div>
+                </div>
+            </a>
 
-    <nav>
-        <ul>
-            <li><a href="proj/proj1/index.html" </a> Project 1</li>
-            <li><a href="proj/proj2/index.html" </a> Project 2</li>
-            <li><a href="proj/proj3/index.html" </a> Project 3</li>
-            <li><a href="proj/proj4/index.html" </a> Project 4</li>
-            <li><a href="proj/proj5/index.html" </a> Project 5</li>
-        </ul>
-    </nav>
+            <a class="card p2" href="proj/proj2/index.html">
+                <div class="thumb"><span>02</span></div>
+                <div class="body">
+                    <h2>WebGL Intro</h2>
+                    <p>First triangles on the GPU: vertex buffers, shaders, and
+                        randomized per-vertex color gradients on demand.</p>
+                    <div class="tags"><span>WebGL</span><span>shaders</span><span>buffers</span></div>
+                </div>
+            </a>
 
-    <footer>
-        <p>&copy Brian Park 2023</p>
+            <a class="card p3" href="proj/proj3/index.html">
+                <div class="thumb"><span>03</span></div>
+                <div class="body">
+                    <h2>Rasterization</h2>
+                    <p>Shaded triangle sets with an interactive camera and per-model
+                        transforms, plus a Delaunay-triangulated image as a bonus scene.</p>
+                    <div class="tags"><span>lighting</span><span>camera</span><span>interaction</span></div>
+                </div>
+            </a>
+
+            <a class="card p4" href="proj/proj4/index.html">
+                <div class="thumb"><span>04</span></div>
+                <div class="body">
+                    <h2>Textures &amp; Transparency</h2>
+                    <p>Texture mapping and alpha blending over a sky backdrop, with
+                        painter's-algorithm sorting for transparent surfaces.</p>
+                    <div class="tags"><span>texturing</span><span>blending</span><span>painter's algorithm</span></div>
+                </div>
+            </a>
+
+            <a class="card p5" href="proj/proj5/index.html">
+                <div class="thumb"><span>05</span></div>
+                <div class="body">
+                    <h2>Hopper</h2>
+                    <p>An endless low-poly river-crossing game in WebGL2: shadow mapping,
+                        vertex-shader water, MSAA post-processing, and GPU particles.</p>
+                    <div class="tags"><span>WebGL2</span><span>shadows</span><span>post-fx</span><span>game</span></div>
+                </div>
+            </a>
+        </nav>
+    </main>
+
+    <footer class="site-footer">
+        <p>&copy; 2023 Brian Park &middot; CSC 561, Principles of Computer Graphics &middot;
+            <a href="https://github.com/briancpark/csc561">Source on GitHub</a></p>
     </footer>
 </body>
 

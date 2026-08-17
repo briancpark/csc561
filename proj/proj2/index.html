@@ -1,14 +1,48 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="UTF-8">
-    <title>Prog 2: Rasterization Shell</title>
+<html lang="en">
 
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Project 2 · WebGL Intro — CSC 561</title>
+    <link rel="stylesheet" href="../../assets/site.css">
     <script type="text/javascript" src="gl-matrix-min.js"></script>
     <script type="text/javascript" src="rasterize.js"></script>
-  </head>
+</head>
 
-  <body onload="main();">
-    <canvas id="myWebGLCanvas" width="512" height="512"></canvas>
-  </body>
+<body onload="main();" class="project p2">
+    <header class="site-header">
+        <a class="back" href="../../index.html">&larr; All projects</a>
+        <span class="crumb">Project 02</span>
+        <nav class="pager">
+            <a href="../proj1/index.html">&lsaquo; Prev</a>
+            <a href="../proj3/index.html">Next &rsaquo;</a>
+        </nav>
+    </header>
+
+    <main>
+        <h1>WebGL Intro</h1>
+        <p class="lede">First triangles on the GPU: vertex and index buffers, a minimal
+            shader pair, and interpolated per-vertex color.</p>
+
+        <div class="stage">
+            <canvas id="myWebGLCanvas" width="512" height="512"></canvas>
+        </div>
+
+        <section class="controls">
+            <h2>Controls</h2>
+            <div class="grid">
+                <div class="key-row">
+                    <span class="keys"><kbd>Space</kbd></span>
+                    <span class="what">Randomize vertex colors &mdash; each press yields a new gradient</span>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <p>&copy; 2023 Brian Park &middot; CSC 561</p>
+    </footer>
+</body>
+
 </html>

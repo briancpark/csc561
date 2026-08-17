@@ -3,7 +3,7 @@
 /* eslint-disable require-jsdoc, max-len, no-throw-literal, no-unused-vars */
 
 /* assignment specific globals */
-const INPUT_TRIANGLES_URL = 'https://ncsucgclass.github.io/prog2/triangles.json'; // triangles file loc
+const INPUT_TRIANGLES_URL = 'triangles.json'; // triangles file loc
 
 /* webgl globals */
 let gl = null; // the all powerful gl object. It's all here folks!

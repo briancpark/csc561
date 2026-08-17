@@ -1,17 +1,101 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <title>Prog 5: Frogger</title>
-
-    <link href="rasterize.css" rel="stylesheet" type="text/css">
-
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Project 5 · Hopper — CSC 561</title>
+    <link rel="stylesheet" href="../../assets/site.css">
     <script src="gl-matrix-min.js" type="text/javascript"></script>
-    <script src="rasterize.js" type="text/javascript"></script>
+    <script src="game.js" type="module"></script>
 </head>
 
-<body onload="main();">
-<canvas height="1024" id="myImageCanvas" width="1024"></canvas>
-<canvas height="1024" id="myWebGLCanvas" width="1024"></canvas>
+<body class="project p5">
+    <header class="site-header">
+        <a class="back" href="../../index.html">&larr; All projects</a>
+        <span class="crumb">Project 05</span>
+        <nav class="pager">
+            <a href="../proj4/index.html">&lsaquo; Prev</a>
+        </nav>
+    </header>
+
+    <main>
+        <h1>Hopper</h1>
+        <p class="lede">An endless river-crossing game rendered entirely with
+            hand-written WebGL2 &mdash; real-time shadow mapping, vertex-shader
+            water, and a full offscreen post-processing pipeline. Hop as far as
+            you can: dodge the traffic, ride the logs, and don't let the river
+            carry you away.</p>
+
+        <div class="hud">
+            <span class="hud-item">Score <strong id="hud-score">0</strong></span>
+            <span class="hud-item">Best <strong id="hud-best">0</strong></span>
+            <span class="hud-status" id="hud-status"></span>
+        </div>
+
+        <div class="stage">
+            <canvas id="glCanvas" class="portrait" width="900" height="1200"></canvas>
+        </div>
+
+        <section class="controls">
+            <h2>Controls</h2>
+            <div class="grid">
+                <div class="key-row">
+                    <span class="keys"><kbd>&uarr;</kbd><kbd>&darr;</kbd><kbd>&larr;</kbd><kbd>&rarr;</kbd></span>
+                    <span class="what">Hop (or <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>)</span>
+                </div>
+                <div class="key-row">
+                    <span class="keys"><kbd>R</kbd></span>
+                    <span class="what">Restart the run</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="controls">
+            <h2>Under the hood</h2>
+            <div class="grid">
+                <div class="key-row">
+                    <span class="keys">Shadow mapping</span>
+                    <span class="what">Depth-only pass from a texel-snapped
+                        orthographic sun, sampled with hardware-compared
+                        3&times;3 PCF for soft edges</span>
+                </div>
+                <div class="key-row">
+                    <span class="keys">Vertex-shader water</span>
+                    <span class="what">Sum-of-sines displacement with analytic
+                        normals, fresnel sky reflection, and sun glints
+                        &mdash; shadows land on the waves too</span>
+                </div>
+                <div class="key-row">
+                    <span class="keys">Lighting</span>
+                    <span class="what">Hemisphere ambient plus Blinn-Phong
+                        directional sun, with exponential distance fog</span>
+                </div>
+                <div class="key-row">
+                    <span class="keys">Post-processing</span>
+                    <span class="what">Scene renders into a 4&times; MSAA
+                        framebuffer, resolved and tonemapped with a vignette
+                        (and a desaturating death fade)</span>
+                </div>
+                <div class="key-row">
+                    <span class="keys">Particles</span>
+                    <span class="what">GPU point sprites streamed through a
+                        dynamic buffer for splashes and landing dust</span>
+                </div>
+                <div class="key-row">
+                    <span class="keys">Procedural world</span>
+                    <span class="what">Seeded lane generation with a guaranteed
+                        walkable corridor; every mesh is built in code from
+                        vertex-colored boxes (append <code>?seed=N</code> for a
+                        reproducible run)</span>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <p>&copy; 2023 Brian Park &middot; CSC 561</p>
+    </footer>
 </body>
+
 </html>
