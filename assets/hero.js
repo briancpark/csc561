@@ -10,7 +10,7 @@
  * upscales cleanly.
  */
 
-const BLOB_COUNT = 7;
+const BLOB_COUNT = 12;
 
 const FS = `#version 300 es
 precision highp float;
@@ -20,6 +20,7 @@ uniform float uTime;
 uniform vec4 uBlobs[${BLOB_COUNT}];
 uniform vec3 uColors[${BLOB_COUNT}];
 uniform vec3 uBg;
+uniform vec3 uLight; // cursor-driven point light, scene units
 
 out vec4 fragColor;
 
@@ -35,7 +36,7 @@ float map(vec3 p, out vec3 col) {
     float wsum = 0.0;
     for (int i = 0; i < ${BLOB_COUNT}; i++) {
         float di = length(p - uBlobs[i].xyz) - uBlobs[i].w;
-        d = smin(d, di, 0.55);
+        d = smin(d, di, 0.42);
         float w = exp(-di * 2.5);
         acc += uColors[i] * w;
         wsum += w;
@@ -84,19 +85,28 @@ void main() {
     if (hit) {
         vec3 p = ro + rd * t;
         vec3 n = normalAt(p);
-        vec3 key = normalize(vec3(0.6, 0.9, 0.7));
-        float diff = max(dot(n, key), 0.0);
-        float fres = pow(1.0 - max(dot(n, -rd), 0.0), 2.6);
-        vec3 h = normalize(key - rd);
-        float spec = pow(max(dot(n, h), 0.0), 60.0);
-        vec3 base = col * 0.55;
-        color = base * (0.45 + 0.55 * diff) + col * fres * 1.25 +
-            vec3(1.0) * spec * 0.4;
+        // The cursor is a point light hovering just in front of the blobs.
+        vec3 toL = uLight - p;
+        float lDist = length(toL);
+        vec3 l = toL / lDist;
+        float atten = 6.0 / (1.0 + lDist * lDist * 0.35);
+        float diff = max(dot(n, l), 0.0) * atten;
+        vec3 h = normalize(l - rd);
+        float spec = pow(max(dot(n, h), 0.0), 48.0) * min(atten, 1.5);
+        float fres = pow(1.0 - max(dot(n, -rd), 0.0), 2.4);
+        // Dim sky fill so unlit blobs still read as glassy shapes.
+        float fill = 0.35 + 0.25 * n.y;
+        vec3 base = col * 0.72;
+        color = base * (fill * 0.55 + diff) + col * fres * 1.1 +
+            vec3(1.0, 0.98, 0.95) * spec * 0.7;
         // Distant blobs sink into the background.
         color = mix(color, bg, smoothstep(6.0, 11.0, t));
     } else if (glow > 0.0) {
         color += glowCol / max(glow, 1e-4) * min(glow, 1.0) * 0.55;
     }
+
+    // Soft rolloff so the cursor light can blow out without clipping to white.
+    color = color / (1.0 + color * 0.22);
 
     // Subtle film grain hides banding in the gradients.
     float grain = fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233)) +
@@ -121,6 +131,11 @@ const ACCENTS = [
     [0.710, 0.549, 1.0], // p4
     [1.0, 0.494, 0.714], // p5
     [0.478, 0.635, 1.0],
+    [1.0, 0.706, 0.329],
+    [0.365, 0.827, 0.620],
+    [0.400, 0.702, 1.0],
+    [0.710, 0.549, 1.0],
+    [1.0, 0.494, 0.714],
 ];
 
 /** Boot the hero; silently does nothing without WebGL2. */
@@ -154,6 +169,7 @@ function initHero() {
     const uBlobs = gl.getUniformLocation(prog, 'uBlobs');
     const uColors = gl.getUniformLocation(prog, 'uColors');
     const uBg = gl.getUniformLocation(prog, 'uBg');
+    const uLight = gl.getUniformLocation(prog, 'uLight');
     gl.bindVertexArray(gl.createVertexArray());
 
     const bgHex = getComputedStyle(document.documentElement)
@@ -166,13 +182,14 @@ function initHero() {
     // eased velocity so interaction feels weighty rather than snappy.
     const blobs = [];
     for (let i = 0; i < BLOB_COUNT; i++) {
-        const a = (i / BLOB_COUNT) * Math.PI * 2;
+        const a = (i / BLOB_COUNT) * Math.PI * 2 + (i % 2) * 0.3;
+        const ring = i % 2 ? 2.2 : 3.8; // inner and outer rings
         blobs.push({
-            cx: Math.cos(a) * 2.9 + 1.6, cy: Math.sin(a) * 1.3 + 0.7,
-            cz: (i % 2) * 0.8 - 0.4,
+            cx: Math.cos(a) * ring + 1.9, cy: Math.sin(a) * ring * 0.42 + 0.6,
+            cz: (i % 3) * 0.6 - 0.6,
             ax: 0.5 + (i % 3) * 0.25, ay: 0.35 + (i % 2) * 0.3,
-            fx: 0.17 + i * 0.023, fy: 0.13 + i * 0.031, ph: i * 1.7,
-            r: 0.40 + (i % 3) * 0.12,
+            fx: 0.17 + i * 0.019, fy: 0.13 + i * 0.027, ph: i * 1.7,
+            r: 0.30 + (i % 3) * 0.10,
             x: 0, y: 0, z: 0, vx: 0, vy: 0,
         });
     }
@@ -180,6 +197,7 @@ function initHero() {
 
     // Cursor in scene units on the z = 0 plane (matches the shader camera).
     const mouse = {x: 0, y: 0, active: false, kick: 0};
+    const lightPos = [2.5, 1.5, 2.5]; // eases toward the cursor
     const toScene = (px, py) => {
         const w = window.innerWidth;
         const h = window.innerHeight;
@@ -267,10 +285,20 @@ function initHero() {
             blobData[i * 4 + 3] = b.r * intro;
         }
 
+        // Light: follows the cursor (hovering in front of the blobs); when
+        // the cursor is away it slowly circles so the scene never goes flat.
+        const lx = mouse.active ? mouse.x : Math.cos(time * 0.25) * 2.5 + 1.4;
+        const ly = mouse.active ? mouse.y : Math.sin(time * 0.31) * 1.2 + 0.6;
+        const lk = 1 - Math.exp(-dt * 10);
+        lightPos[0] += (lx - lightPos[0]) * lk;
+        lightPos[1] += (ly - lightPos[1]) * lk;
+        lightPos[2] = 2.2;
+
         gl.viewport(0, 0, canvas.width, canvas.height);
         gl.uniform2f(uRes, canvas.width, canvas.height);
         gl.uniform1f(uTime, time);
         gl.uniform4fv(uBlobs, blobData);
+        gl.uniform3fv(uLight, lightPos);
         gl.drawArrays(gl.TRIANGLES, 0, 3);
 
         if (!reduceMotion) requestAnimationFrame(frame);

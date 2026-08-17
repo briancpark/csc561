@@ -120,6 +120,18 @@ a:hover { text-decoration: underline; }
 
 .hero-bg.is-ready { opacity: 1; }
 
+/* keeps the hero copy legible however bright the blobs get behind it */
+.hero-shade {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background: linear-gradient(100deg,
+        rgba(11, 14, 20, 0.88) 0%,
+        rgba(11, 14, 20, 0.55) 32%,
+        transparent 58%);
+}
+
 .landing main,
 .landing .site-footer { position: relative; z-index: 1; }
 
