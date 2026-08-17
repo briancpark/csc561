@@ -6,16 +6,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>CSC 561 · Computer Graphics Portfolio</title>
     <link rel="stylesheet" href="assets/site.css">
+    <script src="assets/hero.js" type="module"></script>
 </head>
 
-<body>
+<body class="landing">
+    <canvas id="hero-gl" class="hero-bg" aria-hidden="true"></canvas>
     <main>
         <header class="hero">
             <p class="kicker">CSC 561 · NC State · Fall 2023</p>
             <h1>Computer Graphics Projects</h1>
             <p>Five projects from Principles of Computer Graphics — from a software
-                ray caster written from scratch to a fully playable WebGL Frogger.
-                Everything renders live in your browser; each page lists its controls.</p>
+                ray caster written from scratch to a shadow-mapped WebGL2 game.
+                Everything renders live in your browser; each page lists its controls.
+                <span class="hint">The blobs behind this text are ray-marched in a
+                    fragment shader — move your cursor, or click.</span></p>
         </header>
 
         <nav class="project-grid">
