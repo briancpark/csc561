@@ -5,7 +5,6 @@
  * flat normals and per-face vertex colors, appended into flat arrays and
  * uploaded once as an interleaved [position, normal, color] buffer.
  */
-/* eslint-disable valid-jsdoc */
 
 /* Corner tables per face, CCW from outside, for a unit box (±1). */
 const FACES = [

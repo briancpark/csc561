@@ -24,5 +24,6 @@ module.exports = {
     'ignorePatterns': ['gl-matrix-min.js'],
     'rules': {
         'indent': ['error', 4],
+        'valid-jsdoc': 'off',
     },
 };
